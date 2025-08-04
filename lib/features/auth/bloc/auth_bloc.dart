@@ -1,4 +1,5 @@
 // lib/features/auth/bloc/auth_bloc.dart
+import 'package:flutter_admain_center/domain/repositories/auth_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // ستحتاج إلى خدمة لتخزين التوكن بشكل آمن، مثل flutter_secure_storage
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -10,7 +11,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   // مثال على استخدام التخزين الآمن
   final _storage = const FlutterSecureStorage();
 
-  AuthBloc() : super(AuthInitial()) {
+  AuthBloc({required AuthRepository authRepository}) : super(AuthInitial()) {
     // --- معالج حدث بدء التطبيق ---
     on<AppStarted>((event, emit) async {
       // هنا تضع منطق التحقق من وجود توكن محفوظ

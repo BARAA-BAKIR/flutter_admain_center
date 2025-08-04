@@ -9,30 +9,32 @@ import 'package:flutter_admain_center/data/models/registration_model.dart';
 class AuthApiDatasource {
   final Dio _dio;
 
-  static const String _baseUrl = "http://192.168.1.6:8000/api"; // تأكد من أن هذا هو الـ IP الصحيح
+  static const String _baseUrl =
+      "http://192.168.1.8:8000/api"; // تأكد من أن هذا هو الـ IP الصحيح
 
-  AuthApiDatasource( )
-      : _dio = Dio(
-          BaseOptions(
-            baseUrl: _baseUrl,
-            connectTimeout: const Duration(seconds: 10),
-            receiveTimeout: const Duration(seconds: 10),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-          ),
-        );
+  AuthApiDatasource()
+    : _dio = Dio(
+        BaseOptions(
+          baseUrl: _baseUrl,
+          connectTimeout: const Duration(seconds: 20),
+          receiveTimeout: const Duration(seconds: 20),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+      );
 
   // دالة تسجيل الدخول
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
+    String? fcmToken, 
   }) async {
     try {
       final response = await _dio.post(
         '/login',
-        data: {'email': email, 'password': password},
+        data: {'email': email, 'password': password, 'fcm_token': fcmToken}, // أضف fcm_token إذا كان متاحًا
       );
       return {'success': true, 'data': response.data};
     } on DioException catch (e) {
@@ -49,19 +51,39 @@ class AuthApiDatasource {
       return {'success': false, 'message': 'حدث خطأ غير متوقع.'};
     }
   }
-
-  // أضف بقية دوال الـ API هنا (getCenters, registerTeacher, etc.)
-   Future<List<CenterModel>> getCenters() async {
+// تسجيل الخروج
+  Future<void> logout() async {
+    try {
+      await _dio.post('/logout');
+    } catch (e) {
+      log('Logout failed: $e');
+      throw Exception('فشل تسجيل الخروج. يرجى المحاولة مرة أخرى.');
+    }
+  }
+  
+  Future<List<CenterModel>> getCenters() async {
+    // --- أضف هذه الأسطر للتشخيص ---
+    print("==============================================");
+    print("DATASOURCE: Trying to fetch centers from $_baseUrl/centers");
+    // ------------------------------------
     try {
       final response = await _dio.get('/centers');
       final List<dynamic> data = response.data['data'];
+      // --- أضف هذا السطر للتشخيص ---
+      print("DATASOURCE: Success! Found ${data.length} centers.");
+      print("==============================================");
+      // ------------------------------------
       return data.map((json) => CenterModel.fromJson(json)).toList();
     } catch (e) {
-      // يمكنك معالجة الخطأ هنا أو تركه للـ Bloc
-      rethrow;
+      // --- أضف هذا السطر للتشخيص ---
+      print("DATASOURCE: FAILED to fetch centers. Error: ${e.toString()}");
+      print("==============================================");
+      // ------------------------------------
+      rethrow; // أعد رمي الخطأ ليتم التعامل معه في الـ Bloc
     }
   }
-    Future<Map<String, dynamic>> registerTeacher(
+
+  Future<Map<String, dynamic>> registerTeacher(
     RegistrationModel registrationData,
   ) async {
     try {

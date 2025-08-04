@@ -7,8 +7,7 @@ class LoginUseCase {
 
   LoginUseCase({required this.repository});
 
-  Future<Map<String, dynamic>> call(String email, String password) {
-    // الـ UseCase يستدعي الدالة من العقد (Repository)
-    return repository.login(email, password);
+  Future<Map<String, dynamic>> call(String email, String password, String? fcmToken) {
+    return repository.login(email, password, fcmToken);
   }
 }
