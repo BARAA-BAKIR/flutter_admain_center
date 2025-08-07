@@ -2,7 +2,7 @@
 
 // الكلاس الأساسي الذي سترث منه كل الأحداث
 // استخدام sealed class هو ممارسة جيدة لضمان أن كل الأحداث معرفة
-import 'package:flutter_admain_center/data/models/registration_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/registration_model.dart';
 
 sealed class RegistrationEvent {}
 

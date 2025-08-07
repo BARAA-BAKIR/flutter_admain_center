@@ -1,182 +1,226 @@
-import 'dart:developer';
-
+// lib/data/datasources/teacher_api_datasource.dart
 import 'package:dio/dio.dart';
-import 'package:flutter_admain_center/data/models/add_student_model.dart';
-import 'package:flutter_admain_center/data/models/level_model.dart';
+import 'package:flutter_admain_center/core/error/failures.dart';
+import 'package:flutter_admain_center/core/utils/safe_api_call.dart';
+import 'package:flutter_admain_center/data/models/teacher/add_student_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/daily_follow_up_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/duty_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/level_model.dart';
+import 'package:dartz/dartz.dart';
 
 class TeacherApiDatasource {
   final Dio _dio;
 
-  static const String _baseUrl = "http://192.168.1.8:8000/api";
+  static const String _baseUrl = "http://192.168.1.10:8000/api";
+
   TeacherApiDatasource()
-    : _dio = Dio(
-        BaseOptions(
-          baseUrl: _baseUrl,
-          connectTimeout: const Duration(seconds: 20),
-          receiveTimeout: const Duration(seconds: 20),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        ),
-      );
-  // دالة الجلب لبيانات حلقتي
-  Future<Map<String, dynamic>> getMyHalaqa(String token) async {
-    try {
+      : _dio = Dio(
+          BaseOptions(
+            baseUrl: _baseUrl,
+            connectTimeout: const Duration(seconds: 20),
+            receiveTimeout: const Duration(seconds: 20),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+          ),
+        );
+
+  Future<Either<Failure, Map<String, dynamic>>> getMyHalaqa(String token) async {
+    return await safeApiCall(() async {
       final response = await _dio.get(
         '/get/myhalaqa/full/for/teacher/',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      log('Response from getMyHalaqa: ${response.data}');
-      return {'success': true, 'data': response.data};
-    } on DioException catch (e) {
-      if (e.response != null) {
-        final responseBody = e.response!.data;
-        String errorMessage = "فشل جلب بيانات الحلقة.";
-        if (responseBody is Map && responseBody.containsKey('message')) {
-          errorMessage = responseBody['message'];
-        }
-        return {'success': false, 'message': errorMessage};
-      }
-      return {'success': false, 'message': 'فشل الاتصال بالخادم.'};
-    } catch (e) {
-      return {'success': false, 'message': 'حدث خطأ غير متوقع.'};
-    }
+      return response.data;
+    });
   }
 
-  Future<List<LevelModel>> getLevels(String token) async {
-    try {
+  Future<Either<Failure, List<LevelModel>>> getLevels(String token) async {
+    return await safeApiCall(() async {
       final response = await _dio.get(
         '/studentprogressstages/get',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       final List<dynamic> data = response.data['data'];
       return data.map((json) => LevelModel.fromJson(json)).toList();
-    } catch (e) {
-      throw Exception('فشل جلب قائمة المراحل');
-    }
+    });
   }
-  //دالة اضافة طالب 
-  Future<Map<String, dynamic>> addStudent({
+
+  Future<Either<Failure, Map<String, dynamic>>> addStudent({
     required String token,
-     required AddStudentModel studentData,
+    required AddStudentModel studentData,
   }) async {
-    try {
-      log('Adding student with data: ${studentData.toJson()}');
+    return await safeApiCall(() async {
       final response = await _dio.post(
         '/add/student/to/halaqa',
-        data:studentData.toJson(),
+        data: studentData.toJson(),
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      return {'success': true, 'data': response.data};
-    } on DioException catch (e) {
-      if (e.response != null) {
-        final responseBody = e.response!.data;
-       // String errorMessage = "فشل إضافة الطالب.";
-       String errorMessage='${e.message}';
-       log(e.toString());
-       log(token);
-        if (responseBody is Map && responseBody.containsKey('message')) {
-          errorMessage = responseBody['message'];
-        }
-        return {'success': false, 'message': errorMessage};
-      }
-      return {'success': false, 'message': 'فشل الاتصال بالخادم.'};
-    } catch (e) {
-      return {'success': false, 'message': 'حدث خطأ غير متوقع.'};
-    }
+      return response.data;
+    });
   }
- 
- Future<Map<String, dynamic>> storeFollowUp({
+
+  Future<Either<Failure, Map<String, dynamic>>> storeFollowUp({
     required String token,
     required Map<String, dynamic> followUpData,
   }) async {
-    try {
-      log('Sending follow-up data: $followUpData');
+    return await safeApiCall(() async {
       final response = await _dio.post(
-        '/followup/store', // المسار الذي اتفقنا عليه
+        '/followup/store',
         data: followUpData,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      return {'success': true, 'data': response.data};
-    } on DioException catch (e) {
-      // التعامل مع الأخطاء
-      return {
-        'success': false,
-        'message': e.response?.data['message'] ?? 'فشل حفظ المتابعة'
-      };
-    }
+      return response.data;
+    });
   }
 
-  // --- دالة جديدة: لإرسال الواجب للسيرفر ---
-  Future<Map<String, dynamic>> storeDuty({
+  Future<Either<Failure, Map<String, dynamic>>> storeDuty({
     required String token,
     required Map<String, dynamic> dutyData,
   }) async {
-    try {
-      log( 'Sending duty data: $dutyData');
+    return await safeApiCall(() async {
       final response = await _dio.post(
-        '/duty/store', // المسار الذي اتفقنا عليه
+        '/duty/store',
         data: dutyData,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      return {'success': true, 'data': response.data};
-    } on DioException catch (e) {
-      // التعامل مع الأخطاء
-      return {
-        'success': false,
-        'message': e.response?.data['message'] ?? 'فشل حفظ الواجب'
-      };
-    }
+      return response.data;
+    });
   }
 
-  // دالة لإرسال البيانات المجمعة للسيرفر
-Future<Map<String, dynamic>> syncBulkData({
-  required String token,
-  required List<Map<String, dynamic>> followUps,
-  required List<Map<String, dynamic>> duties,
-}) async {
-  try {
-    log("🚀 Sending BULK data to server... ${followUps}${duties}");
-    final response = await _dio.post(
-      '/sync/bulk', // المسار الذي عرفناه في لارافل
-      data: {
-        'follow_ups': followUps,
-        'duties': duties,
-      },
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
-    log("✅ BULK Sync successful from API side.");
-    return {'success': true, 'data': response.data};
-  } on DioException catch (e) {
-    log("❌ BULK Sync API Error: ${e.response?.data ?? e.message}");
-    // يمكنك تحليل e.response.data هنا لعرض أخطاء التحقق للمستخدم
-    return {'success': false, 'message': 'فشل المزامنة الجماعية'};
-  }
-}
-// ... (داخل كلاس TeacherApiDatasource)
-
-  // --- دالة جديدة: لجلب ملف الطالب الكامل ---
-  Future<Map<String, dynamic>> getStudentProfile(String token, int studentId) async {
-    try {
-      final response = await _dio.get(
-        '/student/$studentId/profile', // المسار الذي عرفناه في لارافل
+  Future<Either<Failure, Map<String, dynamic>>> syncBulkData({
+    required String token,
+    required List<Map<String, dynamic>> followUps,
+    required List<Map<String, dynamic>> duties,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.post(
+        '/sync/bulk',
+        data: {
+          'follow_ups': followUps,
+          'duties': duties,
+        },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      // الاستجابة من لارافل تحتوي على 'success' و 'data'
-      // نحن نهتم بالبيانات الموجودة داخل مفتاح 'data'
-      if (response.data['success'] == true) {
-        return {'success': true, 'data': response.data['data']};
-      } else {
-        return {'success': false, 'message': response.data['message'] ?? 'فشل جلب البيانات من السيرفر'};
-      }
-    } on DioException catch (e) {
-      // معالجة أخطاء الشبكة
-      return {'success': false, 'message': 'فشل الاتصال بالخادم: ${e.message}'};
-    } catch (e) {
-      // معالجة أي خطأ آخر
-      return {'success': false, 'message': 'حدث خطأ غير متوقع: ${e.toString()}'};
-    }
+      return response.data;
+    });
   }
 
+  Future<Either<Failure, Map<String, dynamic>>> getStudentProfile(String token, int studentId) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/student/$studentId/profile',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+
+  Future<Either<Failure, Map<String, dynamic>>> fetchHalaqaInfo(String token, int halaqaId) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/halaqa/$halaqaId/info',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+
+  Future<Either<Failure, Map<String, dynamic>>> fetchLatestStudentData({
+    required String token,
+    required int studentId,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/student/$studentId/latest-data',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      final responseData = response.data as Map<String, dynamic>;
+      final DailyFollowUpModel? followUp = responseData['followUp'] != null
+          ? DailyFollowUpModel.fromJson(responseData['followUp'])
+          : null;
+      final DutyModel? duty = responseData['duty'] != null
+          ? DutyModel.fromJson(responseData['duty'])
+          : null;
+
+      // هنا يمكنك إرجاع الـ Map مباشرةً، والمستودع يقوم بالتحويل لاحقاً
+      return {'followUp': followUp, 'duty': duty};
+    });
+  }
+Future<Either<Failure, Map<String, dynamic>>> getDashboardSummary({
+  required String token,
+  required int halaqaId,
+}) async {
+  print("🌐 [Datasource] إرسال GET إلى /halaqa/$halaqaId/dashboard-summary");
+  print("📌 [Datasource] Header: Bearer $token");
+  return await safeApiCall(() async {
+    final response = await _dio.get(
+      '/halaqa/$halaqaId/dashboard-summary',
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    print("📩 [Datasource] الاستجابة من السيرفر: ${response.data}");
+    return response.data;
+  });
+}
+  /// يجلب الملف الشخصي للأستاذ من الـ API
+  Future<Either<Failure, Map<String, dynamic>>> getTeacherProfile(String token) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/teacher/profile', // المسار الجديد
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      // الـ API الجديد يرجع البيانات داخل مفتاح 'data'
+      return response.data['data']; 
+    });
+  }
+
+  /// يرسل بيانات الملف الشخصي المحدثة إلى الـ API
+  Future<Either<Failure, Map<String, dynamic>>> updateTeacherProfile({
+    required String token,
+    String? firstName, // اجعلها اختيارية
+    String? lastName,
+    String? phone,
+    String? address,
+    required String currentPassword, // كلمة المرور الحالية مطلوبة
+  }) async {
+    return await safeApiCall(() async {
+      final Map<String, dynamic> data = {
+        'current_password': currentPassword,
+      };
+      // أضف الحقول فقط إذا لم تكن فارغة
+      if (firstName != null && firstName.isNotEmpty) data['first_name'] = firstName;
+      if (lastName != null && lastName.isNotEmpty) data['last_name'] = lastName;
+      if (phone != null && phone.isNotEmpty) data['phone_number'] = phone;
+      if (address != null && address.isNotEmpty) data['address'] = address;
+
+      final response = await _dio.post(
+        '/teacher/profile', // المسار الجديد
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        data: data,
+      );
+      // الـ API الجديد يرجع البيانات المحدثة داخل مفتاح 'data'
+      return response.data['data'];
+    });
+  }
+
+   Future<Either<Failure, Map<String, dynamic>>> getNotifications(String token, int page) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/notifications',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        queryParameters: {'page': page},
+      );
+      return response.data;
+    });
+  }
+
+  Future<Either<Failure, void>> markNotificationAsRead(String token, String notificationId) async {
+    return await safeApiCall(() async {
+      await _dio.post(
+        '/notifications/$notificationId/mark-as-read',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    });
+  }
 }

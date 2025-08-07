@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 // استيراد الطبقات والبلوكات اللازمة
 import 'package:flutter_admain_center/core/constants/app_colors.dart';
 import 'package:flutter_admain_center/core/widgets/custom_text_field.dart';
-import 'package:flutter_admain_center/data/models/registration_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/registration_model.dart';
 import 'package:flutter_admain_center/domain/usecases/get_centers_usecase.dart';
 import 'package:flutter_admain_center/domain/usecases/register_teacher_usecase.dart';
 import 'package:flutter_admain_center/features/auth/bloc/auth_bloc.dart';

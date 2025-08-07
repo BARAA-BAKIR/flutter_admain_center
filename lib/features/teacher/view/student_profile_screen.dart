@@ -1,10 +1,10 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter_admain_center/data/models/daily_follow_up_model.dart';
-import 'package:flutter_admain_center/data/models/duty_model.dart';
-import 'package:flutter_admain_center/data/models/student_profile_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/daily_follow_up_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/duty_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/student_profile_model.dart';
 import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
-import 'package:flutter_admain_center/features/teacher/bloc/profile_bloc.dart';
+import 'package:flutter_admain_center/features/teacher/bloc/profile_student/profile_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_admain_center/core/constants/app_colors.dart';

@@ -28,6 +28,12 @@ dependencies:
   sembast: ^3.8.5+1
   collection: ^1.19.1
   fl_chart: ^1.0.0
+  dartz: ^0.10.1
+  app_links: ^6.4.0
+  excel: ^4.0.6
+  # share_plus: ^7.2.2
+  cached_network_image: ^3.4.1
+  timeago: ^3.7.1
   #shared_preferences: ^2.0.13
 dev_dependencies:
   flutter_test:

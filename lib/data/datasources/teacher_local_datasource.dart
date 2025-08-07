@@ -10,7 +10,7 @@
 //   final DatabaseService _dbService = DatabaseService();
 //   // اسم "المخزن" أو "الجدول" في Sembast
 //   final _store = stringMapStoreFactory.store('follow_ups');
-  
+
 //    // --- جديد: مخزن خاص ببيانات الحلقة ---
 //   final _halaqaStore = StoreRef.main();
 
@@ -124,7 +124,7 @@
 //       print("❌ خطأ في المزامنة: $e");
 //     }
 //   }
-  
+
 //    // --- دالة جديدة: لحفظ أو تحديث الواجب محلياً ---
 //   Future<void> upsertDuty(DailyFollowUpModel duty) async {
 //     final db = await _dbService.database;
@@ -145,16 +145,17 @@
 // }
 // lib/data/datasources/teacher_local_datasource.dart
 // lib/data/datasources/teacher_local_datasource.dart
+// lib/data/datasources/teacher_local_datasource.dart
 
 import 'package:flutter_admain_center/core/services/database_service.dart';
-import 'package:flutter_admain_center/data/models/daily_follow_up_model.dart';
-import 'package:flutter_admain_center/data/models/duty_model.dart';
-import 'package:flutter_admain_center/data/models/myhalaqa_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/daily_follow_up_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/duty_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/myhalaqa_model.dart';
 import 'package:sembast/sembast.dart';
 
 class TeacherLocalDatasource {
   final DatabaseService _dbService = DatabaseService();
-  
+
   final _followUpStore = stringMapStoreFactory.store('follow_ups');
   final _dutyStore = stringMapStoreFactory.store('duties');
   final _halaqaStore = StoreRef.main();
@@ -167,7 +168,8 @@ class TeacherLocalDatasource {
 
   Future<MyhalaqaModel?> getCachedHalaqaData() async {
     final db = await _dbService.database;
-    final halaqaJson = await _halaqaStore.record('my_halaqa').get(db) as Map<String, dynamic>?;
+    final halaqaJson =
+        await _halaqaStore.record('my_halaqa').get(db) as Map<String, dynamic>?;
     return halaqaJson != null ? MyhalaqaModel.fromJson(halaqaJson) : null;
   }
 
@@ -192,22 +194,14 @@ class TeacherLocalDatasource {
       await _followUpStore.record(key).update(db, {'isSynced': true});
     }
   }
-
-  // =================================================================
-  // --- الدالة الناقصة الأولى: تم إضافتها هنا ---
-  // =================================================================
-  /// دالة لجلب متابعة طالب واحد في يوم معين.
+  
   Future<DailyFollowUpModel?> getFollowUp(int studentId, String date) async {
     final db = await _dbService.database;
-    final key = '${studentId}_${date}';
+    final key = '${studentId}_$date';
     final record = await _followUpStore.record(key).get(db);
     return record != null ? DailyFollowUpModel.fromSembast(record) : null;
   }
-
-  // =================================================================
-  // --- الدالة الناقصة الثانية: تم إضافتها هنا ---
-  // =================================================================
-  /// دالة لجلب كل المتابعات لتاريخ معين.
+  
   Future<List<DailyFollowUpModel>> getFollowUpsForDate(String date) async {
     final db = await _dbService.database;
     final finder = Finder(filter: Filter.equals('date', date));
@@ -229,30 +223,31 @@ class TeacherLocalDatasource {
     final record = await _dutyStore.record(studentId.toString()).get(db);
     return record != null ? DutyModel.fromSembast(record) : null;
   }
-
-  /// دالة لجلب كل الواجبات التي لم تتم مزامنتها.
+  
   Future<List<DutyModel>> getUnsyncedDuties() async {
     final db = await _dbService.database;
-    // نبحث عن كل السجلات التي قيمة isSynced فيها هي false
     final finder = Finder(filter: Filter.equals('isSynced', false));
     final records = await _dutyStore.find(db, finder: finder);
-    
-    // نحول السجلات إلى قائمة من DutyModel
     return records.map((snapshot) {
       return DutyModel.fromSembast(snapshot.value);
     }).toList();
   }
-
-  /// دالة لوضع علامة "تمت المزامنة" على مجموعة من الواجبات.
+  
   Future<void> markDutiesAsSynced(List<DutyModel> duties) async {
     final db = await _dbService.database;
     await db.transaction((txn) async {
       for (var duty in duties) {
         final key = duty.studentId.toString();
-        // نحدث فقط حقل isSynced إلى true
         await _dutyStore.record(key).update(txn, {'isSynced': true});
       }
     });
   }
 
+   Future<void> clearAllData() async {
+    final db = await _dbService.database;
+    await _followUpStore.drop(db);
+    await _dutyStore.drop(db);
+    await _halaqaStore.drop(db);
+    print('🧹 تم مسح جميع البيانات المحلية بنجاح.');
+  }
 }

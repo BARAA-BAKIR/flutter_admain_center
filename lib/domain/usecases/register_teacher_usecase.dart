@@ -1,5 +1,7 @@
 // lib/domain/usecases/register_teacher_usecase.dart
-import 'package:flutter_admain_center/data/models/registration_model.dart';
+import 'package:dartz/dartz.dart';
+import 'package:flutter_admain_center/core/error/failures.dart';
+import 'package:flutter_admain_center/data/models/teacher/registration_model.dart';
 import 'package:flutter_admain_center/domain/repositories/auth_repository.dart';
 
 class RegisterTeacherUseCase {
@@ -7,7 +9,8 @@ class RegisterTeacherUseCase {
 
   RegisterTeacherUseCase({required this.repository});
 
-  Future<Map<String, dynamic>> call(RegistrationModel data) {
+  // يجب تغيير نوع العودة
+  Future<Either<Failure, Map<String, dynamic>>> call(RegistrationModel data) {
     return repository.registerTeacher(data);
   }
 }

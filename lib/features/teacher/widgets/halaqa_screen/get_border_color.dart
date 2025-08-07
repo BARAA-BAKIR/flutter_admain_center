@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_admain_center/core/constants/app_colors.dart';
-import 'package:flutter_admain_center/data/models/student_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/student_model.dart';
 
 Color getBorderColor(AttendanceStatus status) {
   switch (status) {

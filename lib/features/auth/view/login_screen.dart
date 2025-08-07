@@ -1,6 +1,7 @@
 // lib/features/auth/view/login_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_admain_center/features/teacher/view/forgot_password_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -19,11 +20,12 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => LoginBloc(
-        // قراءة الـ Dependencies التي وفرناها في main.dart
-        loginUseCase: context.read<LoginUseCase>(),
-        authBloc: context.read<AuthBloc>(),
-      ),
+      create:
+          (context) => LoginBloc(
+            // قراءة الـ Dependencies التي وفرناها في main.dart
+            loginUseCase: context.read<LoginUseCase>(),
+            authBloc: context.read<AuthBloc>(),
+          ),
       child: const LoginView(), // عرض الواجهة الفعلية
     );
   }
@@ -56,11 +58,11 @@ class _LoginViewState extends State<LoginView> {
     // التحقق من صحة الحقول أولاً
     if (_formKey.currentState!.validate()) {
       context.read<LoginBloc>().add(
-            LoginRequested(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            ),
-          );
+        LoginRequested(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        ),
+      );
     }
   }
 
@@ -96,22 +98,41 @@ class _LoginViewState extends State<LoginView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(Icons.school_rounded, size: size.width * 0.3, color: AppColors.steel_blue),
+                    Icon(
+                      Icons.school_rounded,
+                      size: size.width * 0.3,
+                      color: AppColors.steel_blue,
+                    ),
                     const SizedBox(height: 16),
                     // اسم المركز هنا يمكن أن يكون عاماً، وبعد الدخول يتم عرض الاسم المخصص
                     Text(
                       'إدارة المراكز القرآنية',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.tajawal(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.night_blue),
+                      style: GoogleFonts.tajawal(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.night_blue,
+                      ),
                     ),
-                    Text('أهلاً بك مجدداً', textAlign: TextAlign.center, style: GoogleFonts.tajawal(fontSize: 18, color: Colors.grey.shade700)),
+                    Text(
+                      'أهلاً بك مجدداً',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.tajawal(
+                        fontSize: 18,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
                     const SizedBox(height: 40),
                     CustomTextField(
                       controller: _emailController,
                       labelText: 'البريد الإلكتروني',
                       icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
-                      validator: (v) => (v == null || v.isEmpty || !v.contains('@')) ? 'بريد إلكتروني غير صالح' : null,
+                      validator:
+                          (v) =>
+                              (v == null || v.isEmpty || !v.contains('@'))
+                                  ? 'بريد إلكتروني غير صالح'
+                                  : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -120,36 +141,92 @@ class _LoginViewState extends State<LoginView> {
                       style: GoogleFonts.tajawal(),
                       decoration: InputDecoration(
                         labelText: 'كلمة المرور',
-                        labelStyle: GoogleFonts.tajawal(color: AppColors.night_blue.withOpacity(0.8)),
-                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.steel_blue),
-                        suffixIcon: IconButton(
-                          icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility, color: AppColors.steel_blue),
-                          onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                        labelStyle: GoogleFonts.tajawal(
+                          color: AppColors.night_blue.withOpacity(0.8),
                         ),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: AppColors.steel_blue, width: 2)),
+                        prefixIcon: const Icon(
+                          Icons.lock_outline,
+                          color: AppColors.steel_blue,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: AppColors.steel_blue,
+                          ),
+                          onPressed:
+                              () => setState(
+                                () => _isPasswordVisible = !_isPasswordVisible,
+                              ),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                          borderSide: const BorderSide(
+                            color: AppColors.steel_blue,
+                            width: 2,
+                          ),
+                        ),
                       ),
-                      validator: (v) => (v == null || v.isEmpty) ? 'كلمة المرور مطلوبة' : null,
+                      validator:
+                          (v) =>
+                              (v == null || v.isEmpty)
+                                  ? 'كلمة المرور مطلوبة'
+                                  : null,
                     ),
                     const SizedBox(height: 12),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: TextButton(onPressed: () { /* TODO: Implement forgot password */ }, child: Text('نسيت كلمة المرور؟', style: GoogleFonts.tajawal(color: AppColors.teal_blue))),
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ForgotPasswordScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'نسيت كلمة المرور؟',
+                          style: GoogleFonts.tajawal(
+                            color: AppColors.teal_blue,
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // الخطوة 4: استخدام BlocBuilder لجعل الزر يتفاعل مع حالة التحميل
                     BlocBuilder<LoginBloc, LoginState>(
                       builder: (context, state) {
                         // إذا كانت الحالة هي التحميل، اعرض مؤشر تحميل
                         if (state.status == LoginStatus.loading) {
-                          return const Center(child: CircularProgressIndicator(color: AppColors.steel_blue));
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.steel_blue,
+                            ),
+                          );
                         }
                         // في الحالات الأخرى، اعرض الزر
                         return ElevatedButton(
                           onPressed: () => _login(context),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.steel_blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
-                          child: Text('تسجيل الدخول', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.steel_blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: Text(
+                            'تسجيل الدخول',
+                            style: GoogleFonts.tajawal(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -157,12 +234,27 @@ class _LoginViewState extends State<LoginView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('ليس لديك حساب؟', style: GoogleFonts.tajawal(color: Colors.grey.shade800)),
+                        Text(
+                          'ليس لديك حساب؟',
+                          style: GoogleFonts.tajawal(
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
                         TextButton(
                           onPressed: () {
-                            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RegistrationScreen()));
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const RegistrationScreen(),
+                              ),
+                            );
                           },
-                          child: Text('سجل الآن', style: GoogleFonts.tajawal(color: AppColors.golden_orange, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            'سجل الآن',
+                            style: GoogleFonts.tajawal(
+                              color: AppColors.golden_orange,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ),

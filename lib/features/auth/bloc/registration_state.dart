@@ -1,5 +1,5 @@
 // lib/features/auth/bloc/registration_state.dart
-import 'package:flutter_admain_center/data/models/center_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/center_model.dart';
 
 
 // استخدام enum لتحديد الحالة بشكل أوضح

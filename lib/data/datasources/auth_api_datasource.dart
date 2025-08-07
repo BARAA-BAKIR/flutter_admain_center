@@ -1,16 +1,15 @@
 // lib/data/datasources/auth_api_datasource.dart
-
-import 'dart:developer';
-
 import 'package:dio/dio.dart';
-import 'package:flutter_admain_center/data/models/center_model.dart';
-import 'package:flutter_admain_center/data/models/registration_model.dart';
+import 'package:flutter_admain_center/core/error/failures.dart'; // تأكد من استيراد كلاسات الأخطاء
+import 'package:flutter_admain_center/core/utils/safe_api_call.dart'; // استيراد الدالة المساعدة
+import 'package:flutter_admain_center/data/models/teacher/center_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/registration_model.dart';
+import 'package:dartz/dartz.dart';
 
 class AuthApiDatasource {
   final Dio _dio;
 
-  static const String _baseUrl =
-      "http://192.168.1.8:8000/api"; // تأكد من أن هذا هو الـ IP الصحيح
+  static const String _baseUrl = "http://192.168.1.10:8000/api";
 
   AuthApiDatasource()
     : _dio = Dio(
@@ -25,119 +24,151 @@ class AuthApiDatasource {
         ),
       );
 
-  // دالة تسجيل الدخول
-  Future<Map<String, dynamic>> login({
+   Future<Either<Failure, Map<String, dynamic>>> login({
     required String email,
     required String password,
-    String? fcmToken, 
+    String? fcmToken,
   }) async {
-    try {
+    return await safeApiCall(() async {
       final response = await _dio.post(
         '/login',
-        data: {'email': email, 'password': password, 'fcm_token': fcmToken}, // أضف fcm_token إذا كان متاحًا
+        data: {'email': email, 'password': password, 'fcm_token': fcmToken},
       );
-      return {'success': true, 'data': response.data};
-    } on DioException catch (e) {
-      if (e.response != null) {
-        final responseBody = e.response!.data;
-        String errorMessage = "فشل تسجيل الدخول. يرجى التحقق من بياناتك.";
-        if (responseBody is Map && responseBody.containsKey('message')) {
-          errorMessage = responseBody['message'];
-        }
-        return {'success': false, 'message': errorMessage};
+      
+      if (response.data is Map<String, dynamic>) {
+        return response.data;
       }
-      return {'success': false, 'message': 'فشل الاتصال بالخادم.'};
-    } catch (e) {
-      return {'success': false, 'message': 'حدث خطأ غير متوقع.'};
-    }
+      // هذا الخطأ يظهر إذا لم تكن الاستجابة من نوع JSON Map
+      throw Exception('Invalid data format from login response.');
+    });
   }
-// تسجيل الخروج
-  Future<void> logout() async {
-    try {
-      await _dio.post('/logout');
-    } catch (e) {
-      log('Logout failed: $e');
-      throw Exception('فشل تسجيل الخروج. يرجى المحاولة مرة أخرى.');
-    }
-  }
-  
-  Future<List<CenterModel>> getCenters() async {
-    // --- أضف هذه الأسطر للتشخيص ---
-    print("==============================================");
-    print("DATASOURCE: Trying to fetch centers from $_baseUrl/centers");
-    // ------------------------------------
-    try {
+  Future<Either<Failure, List<CenterModel>>> getCenters() async {
+    return await safeApiCall(() async {
       final response = await _dio.get('/centers');
       final List<dynamic> data = response.data['data'];
-      // --- أضف هذا السطر للتشخيص ---
-      print("DATASOURCE: Success! Found ${data.length} centers.");
-      print("==============================================");
-      // ------------------------------------
       return data.map((json) => CenterModel.fromJson(json)).toList();
+    });
+  }
+
+  Future<Either<Failure, Map<String, dynamic>>> registerTeacher(
+    RegistrationModel registrationData,
+  ) async {
+    return await safeApiCall(() async {
+      final response = await _dio.post(
+        '/register/teacher',
+        data: registrationData.toJson(),
+      );
+      return response.data;
+    });
+  }
+
+  Future<Either<Failure, void>> forgotPassword(String email) async {
+    return await safeApiCall(() async {
+      await _dio.post('/forgot-password', data: {'email': email});
+      return;
+    });
+  }
+
+  Future<Either<Failure, Map<String, dynamic>>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+    required String token,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.post(
+        '/student/auth/change-password',
+        data: {
+         
+          'password': currentPassword,
+          'new_password': newPassword,
+          'new_password_confirmation': confirmPassword,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+
+  Future<Either<Failure, Map<String, dynamic>>> fetchProfile(
+    String token,
+  ) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/teacher/profile',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data['data'];
+    });
+  }
+
+  Future<Either<Failure, Map<String, dynamic>>> updateProfile({
+    required String token,
+    required String name,
+    required String phone,
+    required String address,
+    required String passwordConfirm,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.post(
+        '/teacher/profile/update',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        data: {
+          'name': name,
+          'phone_number': phone,
+          'address': address,
+          'password_confirm': passwordConfirm,
+        },
+      );
+      return response.data;
+    });
+  }
+
+  Future<Either<Failure, void>> resetPassword({
+    required String email,
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      await _dio.post(
+        '/reset-password', // هذا هو المسار في Laravel
+        data: {
+          'email': email,
+          'token': token,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+      );
+      return const Right(null); // نجح الأمر
+    } on DioException catch (e) {
+      return Left(ServerFailure(message: e.response?.data['message'] ?? 'An error occurred'));
     } catch (e) {
-      // --- أضف هذا السطر للتشخيص ---
-      print("DATASOURCE: FAILED to fetch centers. Error: ${e.toString()}");
-      print("==============================================");
-      // ------------------------------------
-      rethrow; // أعد رمي الخطأ ليتم التعامل معه في الـ Bloc
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 
-  Future<Map<String, dynamic>> registerTeacher(
-    RegistrationModel registrationData,
-  ) async {
-    try {
-      // --- هذا هو التغيير الرئيسي ---
-      final response = await _dio.post(
-        '/register/teacher', // المسار النسبي فقط، لأن الرابط الأساسي معرف في BaseOptions
-        data: registrationData.toJson(), // dio يتعامل مع Map مباشرة
+ Future<Either<Failure, void>> logout({required String token}) async {
+    return await safeApiCall(() async {
+      await _dio.post(
+        '/logout',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      // --- نهاية التغيير الرئيسي ---
-
-      // dio يفترض أن أي status code في نطاق 2xx هو نجاح
-      // لذلك لا نحتاج للتحقق من response.statusCode == 201
-      return {
-        'success': true,
-        'data':
-            response.data, // response.data يحتوي على الـ Map المحول تلقائياً
-      };
-    } on DioException catch (e) {
-      // --- إدارة الأخطاء أصبحت أكثر قوة ---
-      log(e.toString()); // للمطور
-      // إذا كانت الاستجابة من السيرفر تحتوي على خطأ (مثل 422, 401, 500)
-      if (e.response != null) {
-        final responseBody = e.response!.data;
-        String errorMessage = "حدث خطأ من الخادم";
-
-        // التعامل مع أخطاء التحقق من الصحة (Validation)
-        if (responseBody is Map && responseBody.containsKey('errors')) {
-          errorMessage = responseBody['errors'].values.first[0];
-        } else if (responseBody is Map && responseBody.containsKey('error')) {
-          errorMessage = responseBody['error'];
-        }
-
-        return {'success': false, 'message': errorMessage};
-      }
-
-      // التعامل مع أخطاء الشبكة (Timeout, no internet, etc.)
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          return {'success': false, 'message': 'انتهت مهلة الاتصال بالخادم.'};
-        case DioExceptionType.badResponse:
-          return {'success': false, 'message': 'استجابة غير صالحة من الخادم.'};
-        case DioExceptionType.cancel:
-          return {'success': false, 'message': 'تم إلغاء الطلب.'};
-        default:
-          return {
-            'success': false,
-            'message': 'فشل الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت.',
-          };
-      }
-    } catch (e) {
-      // لأي خطأ غير متوقع آخر
-      return {'success': false, 'message': 'حدث خطأ غير متوقع في التطبيق.'};
-    }
+      return;
+    });
+  }
+Future<Either<Failure, void>> updateNotificationStatus({
+    required bool status,
+    required String token,
+  }) async {
+    return await safeApiCall(() async {
+      // ignore: unused_local_variable
+      final response = await _dio.put( // استخدام _dio.put بدلاً من http.put
+        '/settings/notifications', // المسار الصحيح بدون baseUrl لأنه موجود في BaseOptions
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        data: {'enabled': status}, // تمرير البيانات مباشرة كـ Map
+      );
+      return; // لا نحتاج لإرجاع بيانات، فقط void
+    });
   }
 }

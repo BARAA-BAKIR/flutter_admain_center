@@ -1,14 +1,15 @@
 // lib/features/teacher/view/halaqa_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_admain_center/data/models/myhalaqa_model.dart';
-import 'package:flutter_admain_center/data/models/student_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/myhalaqa_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/student_model.dart';
+import 'package:flutter_admain_center/features/teacher/view/profile_screen.dart';
 import 'package:flutter_admain_center/features/teacher/widgets/halaqa_screen/build_attendance.dart';
 import 'package:flutter_admain_center/features/teacher/widgets/halaqa_screen/get_border_color.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 // تأكد من صحة مسارات الاستيراد بناءً على اسم مشروعك
 import 'package:flutter_admain_center/core/constants/app_colors.dart';
-import 'package:flutter_admain_center/features/teacher/bloc/halaqa_bloc.dart';
+import 'package:flutter_admain_center/features/teacher/bloc/myhalaqa/halaqa_bloc.dart';
 import 'package:flutter_admain_center/features/teacher/view/student_follow_up_screen.dart';
 import 'package:flutter_admain_center/features/teacher/view/student_profile_screen.dart';
 import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
@@ -32,7 +33,7 @@ class HalaqaScreen extends StatelessWidget {
 
       child: Scaffold(
         backgroundColor: Colors.grey.shade100,
-        appBar: _buildAppBar(),
+        appBar: _buildAppBar(context),
         // --- هنا التعديل الكامل ---
         body: BlocListener<HalaqaBloc, HalaqaState>(
           listenWhen: (previous, current) {
@@ -166,7 +167,7 @@ class HalaqaScreen extends StatelessWidget {
   }
 
   // --- AppBar بقي هنا ليكون خاصاً بهذه الشاشة ---
-  AppBar _buildAppBar() {
+  AppBar _buildAppBar(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
       backgroundColor: Colors.white,
@@ -194,11 +195,18 @@ class HalaqaScreen extends StatelessWidget {
           ),
           onPressed: () {},
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: CircleAvatar(
             backgroundColor: AppColors.light_sky_blue,
-            child: Icon(Icons.person, color: AppColors.steel_blue),
+            child: IconButton(
+              icon: const Icon(Icons.person, color: AppColors.steel_blue),
+              onPressed: () {
+Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => ProfileScreen()));
+              },
+            ),
           ),
         ),
       ],
@@ -283,11 +291,11 @@ class HalaqaScreen extends StatelessWidget {
 // --- ويدجت بطاقة الطالب) ---
 class StudentCard extends StatelessWidget {
   final Student student;
- // final HalaqaBloc halaqaBloc;
+  // final HalaqaBloc halaqaBloc;
   const StudentCard({
     super.key,
     required this.student,
-   // required this.halaqaBloc,
+    // required this.halaqaBloc,
   });
 
   @override
@@ -352,7 +360,7 @@ class StudentCard extends StatelessWidget {
     );
   }
 
- // --- هذه هي الدالة التي تم إصلاحها بالكامل ---
+  // --- هذه هي الدالة التي تم إصلاحها بالكامل ---
   Widget _buildActions(BuildContext context) {
     final status = student.attendanceStatus;
 
@@ -365,12 +373,13 @@ class StudentCard extends StatelessWidget {
       // ننتظر النتيجة من شاشة المتابعة
       final bool? didSaveChanges = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
-          builder: (_) => StudentFollowUpScreen(
-            studentId: student.id,
-            groupId: halaqaId,
-            studentName: '${student.firstName} ${student.lastName}',
-            isEditing: isEditing, // نمرر القيمة الصحيحة
-          ),
+          builder:
+              (_) => StudentFollowUpScreen(
+                studentId: student.id,
+                groupId: halaqaId,
+                studentName: '${student.firstName} ${student.lastName}',
+                isEditing: isEditing, // نمرر القيمة الصحيحة
+              ),
         ),
       );
 
@@ -391,20 +400,24 @@ class StudentCard extends StatelessWidget {
               Icons.check_circle_outline,
               AppColors.teal_blue,
               status == AttendanceStatus.present,
-              () => context.read<HalaqaBloc>().add(MarkStudentAttendance(
-                studentId: student.id,
-                newStatus: AttendanceStatus.present,
-              )),
+              () => context.read<HalaqaBloc>().add(
+                MarkStudentAttendance(
+                  studentId: student.id,
+                  newStatus: AttendanceStatus.present,
+                ),
+              ),
             ),
             buildAttendanceButton(
               'غائب',
               Icons.cancel_outlined,
               Colors.red.shade600,
               status == AttendanceStatus.absent,
-              () => context.read<HalaqaBloc>().add(MarkStudentAttendance(
-                studentId: student.id,
-                newStatus: AttendanceStatus.absent,
-              )),
+              () => context.read<HalaqaBloc>().add(
+                MarkStudentAttendance(
+                  studentId: student.id,
+                  newStatus: AttendanceStatus.absent,
+                ),
+              ),
             ),
           ],
         ),
@@ -425,7 +438,8 @@ class StudentCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.edit_note_rounded),
                       label: const Text('تعديل المتابعة'),
-                      onPressed: () => _navigateToFollowUp(true), // isEditing: true
+                      onPressed:
+                          () => _navigateToFollowUp(true), // isEditing: true
                     ),
                   )
                 else
@@ -434,14 +448,15 @@ class StudentCard extends StatelessWidget {
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.checklist_rtl_rounded),
                       label: const Text('بدء المتابعة'),
-                      onPressed: () => _navigateToFollowUp(false), // isEditing: false
+                      onPressed:
+                          () => _navigateToFollowUp(false), // isEditing: false
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.steel_blue,
                         foregroundColor: Colors.white,
                       ),
                     ),
                   ),
-                
+
                 const SizedBox(width: 8),
 
                 // زر العرض يظهر دائماً إذا كان الطالب حاضراً
@@ -449,10 +464,12 @@ class StudentCard extends StatelessWidget {
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => StudentProfileScreen(
-                          studentId: student.id,
-                          studentName: '${student.firstName} ${student.lastName}',
-                        ),
+                        builder:
+                            (_) => StudentProfileScreen(
+                              studentId: student.id,
+                              studentName:
+                                  '${student.firstName} ${student.lastName}',
+                            ),
                       ),
                     );
                   },
