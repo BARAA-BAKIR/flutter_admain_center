@@ -8,13 +8,14 @@ class TeachersState extends Equatable {
   final bool hasReachedMax;
   final int currentPage;
   final String? errorMessage;
-
+ final String? successMessage;
   const TeachersState({
     this.status = TeachersStatus.initial,
     this.teachers = const <Teacher>[],
     this.hasReachedMax = false,
     this.currentPage = 1,
     this.errorMessage,
+    this.successMessage
   });
 
   TeachersState copyWith({
@@ -23,16 +24,18 @@ class TeachersState extends Equatable {
     bool? hasReachedMax,
     int? currentPage,
     String? errorMessage,
+    String?  successMessage,
   }) {
     return TeachersState(
       status: status ?? this.status,
       teachers: teachers ?? this.teachers,
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       currentPage: currentPage ?? this.currentPage,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage,
+      successMessage: successMessage
     );
   }
 
   @override
-  List<Object?> get props => [status, teachers, hasReachedMax, currentPage, errorMessage];
+  List<Object?> get props => [status, teachers, hasReachedMax, currentPage, errorMessage,successMessage];
 }

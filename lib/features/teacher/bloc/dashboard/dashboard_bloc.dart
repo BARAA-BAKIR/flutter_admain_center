@@ -62,6 +62,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       // Success case (Right)
       (isSynced) {
         emit(state.copyWith(syncStatus: SyncStatus.success));
+        add(LoadDashboardData(halaqaId: event.halaqaId));
         // You can reload the dashboard data here if needed
         // add(LoadDashboardData(halaqaId: event.halaqaId));
       },

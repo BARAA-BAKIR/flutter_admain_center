@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_admain_center/core/widgets/list_item_tile.dart';
 import 'package:flutter_admain_center/core/widgets/search_and_filter_bar.dart';
-import 'package:flutter_admain_center/core/widgets/view/add_student_screen.dart';
-import 'package:flutter_admain_center/data/models/center_maneger/student_model.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/student_details_model.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/student_list_model.dart';
 import 'package:flutter_admain_center/domain/repositories/center_maneger_repository.dart';
 import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
 import 'package:flutter_admain_center/features/center_manager/bloc/add_student_bloc/center_add_student_bloc.dart';
-import 'package:flutter_admain_center/features/center_manager/bloc/filter_bloc/filter_bloc.dart';
 import 'package:flutter_admain_center/features/center_manager/bloc/student_bloc/students_bloc.dart';
+import 'package:flutter_admain_center/features/center_manager/view/center_add_student_screen.dart';
 import 'package:flutter_admain_center/features/center_manager/view/edit_student_screen.dart';
-import 'package:flutter_admain_center/features/center_manager/widgets/filter_dialig_view.dart';
 import 'package:flutter_admain_center/features/center_manager/widgets/transfer_student_dialog.dart';
 import 'package:flutter_admain_center/features/teacher/bloc/profile_student/profile_bloc.dart';
 import 'package:flutter_admain_center/features/teacher/view/student_profile_screen.dart';
@@ -64,31 +63,38 @@ class _StudentsScreenState extends State<StudentsScreen> {
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      // إرسال حدث البحث إلى البلوك
+      // نرسل حدثاً جديداً للبحث
       context.read<StudentsBloc>().add(FetchStudents(searchQuery: query));
     });
   }
 
-void _showFilterDialog() {
-    final studentBloc = context.read<StudentsBloc>();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, // مهم للسماح للنافذة بالتمدد
-      builder: (_) => BlocProvider(
-        create: (ctx) => FilterBloc(repository: studentBloc.centerManagerRepository)..add(LoadFilterData()),
-        // ====================  هنا هو الإصلاح ====================
-        // إزالة const من استدعاء FilterDialogView
-        child: FilterDialogView(
-          onApply: (halaqaId, levelId) {
-            studentBloc.add(ApplyStudentsFilter(halaqaId: halaqaId, levelId: levelId));
-          },
-        ),
-        // =======================================================
-      ),
-    );
-  }
+  //  void _showFilterDialog() {
+  //   // نقرأ الـ repository مباشرة من الـ context الحالي
+  //   final repository = context.read<CenterManagerRepository>();
+  //   final studentBloc = context.read<StudentsBloc>(); // نحتاجه لتطبيق الفلتر
+
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     builder: (_) => BlocProvider(
+  //       // نمرر الـ repository الذي قرأناه لـ FilterBloc
+  //       create: (ctx) => FilterBloc(repository: repository)..add(LoadFilterData()),
+  //       child: FilterDialogView(
+  //         onApply: (halaqaId, levelId) {
+  //           // عند الضغط على "تطبيق"، نرسل حدثاً لـ StudentsBloc
+  //           studentBloc.add(
+  //             ApplyStudentsFilter(halaqaId: halaqaId, levelId: levelId),
+  //           );
+  //         },
+  //       ),
+  //     ),
+  //   );
+  // }
+
   // دالة لعرض قائمة الخيارات للطالب (تبقى كما هي للمستقبل)
-  void _showStudentOptions(BuildContext context, Student student) {
+  void _showStudentOptions(BuildContext context, StudentListItem student) {
+    final centerManagerRepo = context.read<CenterManagerRepository>();
+    final teacherRepo = context.read<TeacherRepository>();
     showModalBottomSheet(
       context: context,
       builder: (ctx) {
@@ -100,23 +106,31 @@ void _showFilterDialog() {
               leading: const Icon(Icons.visibility),
               title: const Text('عرض الملف الشخصي'),
               onTap: () async {
-                Navigator.pop(ctx); // أغلق النافذة أولاً
-                final updatedStudent = await Navigator.of(
-                  context,
-                ).push<Student>(
+                Navigator.pop(ctx);
+                // ==================== هنا هو التصحيح ====================
+                // لا ننتظر نتيجة هنا لأن شاشة العرض لا تعيد شيئاً
+                Navigator.of(context).push(
                   MaterialPageRoute(
-                     builder: (_) => BlocProvider(
-                      create: (context) => ProfileBloc(
-                        teacherRepository: RepositoryProvider.of<TeacherRepository>(context),
-                      )..add(FetchProfileData(student.id)),
-                      child: StudentProfileView(studentName: student.fullName),
-                    ),
+                    builder:
+                        (_) => MultiRepositoryProvider(
+                          providers: [
+                            RepositoryProvider.value(value: centerManagerRepo),
+                            RepositoryProvider.value(value: teacherRepo),
+                          ],
+                          child: BlocProvider(
+                            create:
+                                (context) => ProfileBloc(
+                                  teacherRepository:
+                                      context.read<TeacherRepository>(),
+                                )..add(FetchProfileData(student.id)),
+                            child: StudentProfileView(
+                              studentName: student.fullName,
+                            ),
+                          ),
+                        ),
                   ),
                 );
-                if (updatedStudent != null && context.mounted) {
-                    context.read<StudentsBloc>().add(
-                    UpdateStudentInList(updatedStudent),
-                  );     }
+                // =======================================================
               },
             ),
             // تعديل البيانات
@@ -124,21 +138,60 @@ void _showFilterDialog() {
               leading: const Icon(Icons.edit),
               title: const Text('تعديل البيانات'),
               onTap: () async {
-                Navigator.pop(ctx);
-                // ننتظر نتيجة شاشة التعديل
-                final updatedStudent = await Navigator.of(
-                  context,
-                ).push<Student>(
-                  MaterialPageRoute(
-                    // هنا يجب توفير EditStudentBloc للشاشة
-                    builder: (_) => EditStudentScreen(student: student),
-                  ),
+                Navigator.pop(ctx); // أغلق النافذة السفلية أولاً
+                print(
+                  "▶️ [StudentsScreen] 'Edit' tapped. Preparing to navigate...",
                 );
-                // إذا عادت بيانات محدثة، نرسل حدثاً لتحديث الواجهة
-                if (updatedStudent != null) {
-                  context.read<StudentsBloc>().add(
-                    UpdateStudentInList(updatedStudent),
+
+                try {
+                  // 1. احصل على كلا الـ Repositories من السياق الحالي بأمان
+                  final centerManagerRepo =
+                      context.read<CenterManagerRepository>();
+                  final teacherRepo = context.read<TeacherRepository>();
+                  print("  ✅ Repositories read successfully.");
+
+                  // 2. انتقل إلى شاشة التعديل
+                  print("  ⏳ Navigating to EditStudentScreen...");
+                  final updatedStudent = await Navigator.of(
+                    context,
+                  ).push<StudentDetails>(
+                    MaterialPageRoute(
+                      builder: (_) {
+                        print(
+                          "    ▶️ Building MaterialPageRoute for EditStudentScreen...",
+                        );
+                        // 3. استخدم MultiRepositoryProvider لتوفير كلا الاعتماديتين
+                        return MultiRepositoryProvider(
+                          providers: [
+                            RepositoryProvider.value(value: centerManagerRepo),
+                            RepositoryProvider.value(value: teacherRepo),
+                          ],
+                          child: EditStudentScreen(
+                            studentId: student.id,
+                            studentName: student.fullName,
+                          ),
+                        );
+                      },
+                    ),
                   );
+
+                  print("✅ [StudentsScreen] Returned from EditStudentScreen.");
+
+                  // هذا الجزء يتم بعد العودة من شاشة التعديل
+                  if (updatedStudent != null && mounted) {
+                    print("  🔄 Student data was updated. Refreshing list.");
+                    context.read<StudentsBloc>().add(
+                      UpdateStudentInList(updatedStudent),
+                    );
+                  } else {
+                    print("  ℹ️ No update was made or returned.");
+                  }
+                } catch (e, stackTrace) {
+                  // هذا الجزء سيمسك بأي خطأ يحدث أثناء عملية الانتقال
+                  print(
+                    "❌❌❌ [StudentsScreen] CRITICAL ERROR during navigation setup: $e",
+                  );
+                  print(stackTrace);
                 }
               },
             ),
@@ -148,16 +201,28 @@ void _showFilterDialog() {
             ListTile(
               leading: const Icon(Icons.sync_alt),
               title: const Text('نقل الطالب'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(ctx);
-                showDialog(
+                final updatedStudent = await showDialog<StudentDetails>(
                   context: context,
                   builder:
-                      (_) => TransferStudentDialog(
-                        studentId: student.id,
-                        studentName: student.fullName,
+                      (_) => RepositoryProvider.value(
+                        value: centerManagerRepo,
+                        child: TransferStudentDialog(
+                          studentId: student.id,
+                          studentName: student.fullName,
+                          // ==================== هنا هو التعديل ====================
+                          currentHalaqaId: student.id, // نمرر ID الحلقة الحالية
+                          // =======================================================
+                        ),
                       ),
                 );
+
+                if (updatedStudent != null && mounted) {
+                  context.read<StudentsBloc>().add(
+                    UpdateStudentInList(updatedStudent),
+                  );
+                }
               },
             ),
             // 4. حذف الطالب (يعمل)
@@ -224,8 +289,8 @@ void _showFilterDialog() {
         children: [
           // 2. تفعيل شريط البحث والفلترة بالكامل
           SearchAndFilterBar(
-            onFilterTap: _showFilterDialog,
             onSearchChanged: _onSearchChanged,
+            hintText: 'ابحث عن طالب بالاسم ...',
           ),
           // 3. ربط القائمة بالبلوك لعرض البيانات الحية
           Expanded(
@@ -264,7 +329,7 @@ void _showFilterDialog() {
                         final student = state.students[index];
                         return ListItemTile(
                           title: student.fullName,
-                          subtitle: student.halaqa?.name ?? 'بلا حلقة',
+                          subtitle: student.halaqaName ?? 'بلا حلقة',
                           onMoreTap:
                               () => _showStudentOptions(context, student),
                         );
@@ -288,15 +353,14 @@ void _showFilterDialog() {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider(
-                    // --- حقن البلوك الخاص بمدير المركز ---
+                    // ✅ هنا يتم إنشاء البلوك وتوفيره
                     create:
                         (context) => CenterAddStudentBloc(
                           centerManagerRepository:
                               context.read<CenterManagerRepository>(),
-                        )..add(
-                          FetchCenterInitialData(),
-                        ), // طلب الحلقات والمراحل فوراً
-                    child: const AddStudentScreen(), // لا نحتاج لتمرير أي شيء
+                        )..add(FetchCenterInitialData()),
+                    child:
+                        const CenterAddStudentScreen(), // الشاشة الآن تجد البلوك فوقها
                   ),
             ),
           );
@@ -307,7 +371,7 @@ void _showFilterDialog() {
         },
         label: const Text('إضافة طالب'),
         icon: const Icon(Icons.add),
-        backgroundColor: AppColors.teal_blue,
+        backgroundColor: AppColors.light_blue,
       ),
     );
   }

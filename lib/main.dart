@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -104,7 +103,7 @@ class _MainAppState extends State<MainApp> {
         NotificationService.display(message);
       }
     });
-      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('A new onMessageOpenedApp event was published!');
       _handleNotificationNavigation(message.data);
     });
@@ -118,7 +117,8 @@ class _MainAppState extends State<MainApp> {
       }
     });
   }
-void _handleNotificationNavigation(Map<String, dynamic> data) {
+
+  void _handleNotificationNavigation(Map<String, dynamic> data) {
     // افترض أن الخادم يرسل 'screen' كجزء من بيانات الإشعار
     final String? screen = data['screen'];
 
@@ -131,6 +131,7 @@ void _handleNotificationNavigation(Map<String, dynamic> data) {
     // يمكنك إضافة المزيد من الشروط هنا لأنواع أخرى من الإشعارات
     // مثال: if (screen == 'halaqa_details') { ... }
   }
+
   /// تهيئة الروابط العميقة باستخدام app_links
   Future<void> _initAppLinks() async {
     _appLinks = AppLinks();
@@ -171,72 +172,103 @@ void _handleNotificationNavigation(Map<String, dynamic> data) {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        Provider<FlutterSecureStorage>(create: (_) => const FlutterSecureStorage()),
-        RepositoryProvider<AuthApiDatasource>(create: (_) => AuthApiDatasource()),
-        RepositoryProvider<TeacherApiDatasource>(create: (_) => TeacherApiDatasource()),
-        RepositoryProvider<TeacherLocalDatasource>(create: (_) => TeacherLocalDatasource()),
+        Provider<FlutterSecureStorage>(
+          create: (_) => const FlutterSecureStorage(),
+        ),
+        RepositoryProvider<AuthApiDatasource>(
+          create: (_) => AuthApiDatasource(),
+        ),
+        RepositoryProvider<TeacherApiDatasource>(
+          create: (_) => TeacherApiDatasource(),
+        ),
+        RepositoryProvider<TeacherLocalDatasource>(
+          create: (_) => TeacherLocalDatasource(),
+        ),
+        RepositoryProvider<CenterManegerApiDatasource>(
+          create: (_) => CenterManegerApiDatasource(),
+        ),
+
         RepositoryProvider<AuthRepository>(
-          create: (context) => AuthRepositoryImpl(
-            datasource: context.read<AuthApiDatasource>(),
-            storage: context.read<FlutterSecureStorage>(),
-            localDatasource: context.read<TeacherLocalDatasource>(),
-          ),
+          create:
+              (context) => AuthRepositoryImpl(
+                datasource: context.read<AuthApiDatasource>(),
+                storage: context.read<FlutterSecureStorage>(),
+                localDatasource: context.read<TeacherLocalDatasource>(),
+              ),
         ),
-       
-      RepositoryProvider<CenterManagerRepository>(
-        create: (context) => CenterManegerRepositoryImpl(
-          datasource: context.read<CenterManegerApiDatasource>(),
-          storage: context.read<FlutterSecureStorage>(),
+
+        RepositoryProvider<CenterManagerRepository>(
+          create:
+              (context) => CenterManegerRepositoryImpl(
+                datasource: context.read<CenterManegerApiDatasource>(),
+                storage: context.read<FlutterSecureStorage>(),
+              ),
         ),
-      ),
         RepositoryProvider<TeacherRepository>(
-          create: (context) => TeacherRepositoryImpl(
-            apiDatasource: context.read<TeacherApiDatasource>(),
-            localDatasource: context.read<TeacherLocalDatasource>(),
-            storage: context.read<FlutterSecureStorage>(),
-          ),
+          create:
+              (context) => TeacherRepositoryImpl(
+                apiDatasource: context.read<TeacherApiDatasource>(),
+                localDatasource: context.read<TeacherLocalDatasource>(),
+                storage: context.read<FlutterSecureStorage>(),
+              ),
         ),
         RepositoryProvider<LoginUseCase>(
-          create: (context) => LoginUseCase(repository: context.read<AuthRepository>()),
+          create:
+              (context) =>
+                  LoginUseCase(repository: context.read<AuthRepository>()),
         ),
         RepositoryProvider<RegisterTeacherUseCase>(
-          create: (context) => RegisterTeacherUseCase(repository: context.read<AuthRepository>()),
+          create:
+              (context) => RegisterTeacherUseCase(
+                repository: context.read<AuthRepository>(),
+              ),
         ),
         RepositoryProvider<GetCentersUseCase>(
-          create: (context) => GetCentersUseCase(repository: context.read<AuthRepository>()),
+          create:
+              (context) =>
+                  GetCentersUseCase(repository: context.read<AuthRepository>()),
         ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>(
-            create: (context) => AuthBloc(authRepository: context.read<AuthRepository>())
-              ..add(AppStarted()),
+            create:
+                (context) =>
+                    AuthBloc(authRepository: context.read<AuthRepository>())
+                      ..add(AppStarted()),
           ),
           BlocProvider<LoginBloc>(
-            create: (context) => LoginBloc(
-              loginUseCase: context.read<LoginUseCase>(),
-              authBloc: context.read<AuthBloc>(),
-            ),
-          ),
-          BlocProvider<HalaqaBloc>(
-            create: (context) => HalaqaBloc(
-              teacherRepository: context.read<TeacherRepository>(),
-            ),
+            create:
+                (context) => LoginBloc(
+                  loginUseCase: context.read<LoginUseCase>(),
+                  authBloc: context.read<AuthBloc>(),
+                ),
           ),
           BlocProvider<DashboardBloc>(
-            create: (context) => DashboardBloc(
-              teacherRepository: context.read<TeacherRepository>(),
-            ),
+            create:
+                (context) => DashboardBloc(
+                  teacherRepository: context.read<TeacherRepository>(),
+                ),
           ),
+          BlocProvider<HalaqaBloc>(
+            create:
+                (context) => HalaqaBloc(
+                  teacherRepository: context.read<TeacherRepository>(),
+                  dashboardBloc: context.read<DashboardBloc>(),
+                ),
+          ),
+
           BlocProvider<ProfileBloc>(
-            create: (context) => ProfileBloc(
-              teacherRepository: context.read<TeacherRepository>(),
-            ),
+            create:
+                (context) => ProfileBloc(
+                  teacherRepository: context.read<TeacherRepository>(),
+                ),
           ),
           BlocProvider<SettingsBloc>(
-            create: (context) => SettingsBloc(
-              authRepository: context.read<AuthRepository>(),
-            )..add(LoadSettings()),
+            create:
+                (context) =>
+                    SettingsBloc(authRepository: context.read<AuthRepository>())
+                      ..add(LoadSettings()),
           ),
         ],
         child: MaterialApp(
@@ -252,7 +284,10 @@ void _handleNotificationNavigation(Map<String, dynamic> data) {
           ],
           supportedLocales: S.delegate.supportedLocales,
           builder: (context, child) {
-            return Directionality(textDirection: TextDirection.rtl, child: child!);
+            return Directionality(
+              textDirection: TextDirection.rtl,
+              child: child!,
+            );
           },
           theme: ThemeData(
             primaryColor: AppColors.steel_blue,
@@ -264,7 +299,7 @@ void _handleNotificationNavigation(Map<String, dynamic> data) {
             builder: (context, state) {
               if (state is AuthAuthenticated) {
                 //return const MainScreen();
-                return const RoleRouterScreen(); 
+                return const RoleRouterScreen();
               }
               if (state is AuthUnauthenticated) {
                 return const LoginScreen();

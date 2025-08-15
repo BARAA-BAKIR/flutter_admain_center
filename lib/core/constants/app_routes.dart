@@ -1,7 +1,7 @@
 
 class AppRoutes {
    
-
+static const String url = 'http://192.168.1.134:8000/api';
   static const String welcome = '/welcome'; // الشاشة الافتتاحية
   static const String login = '/login';
   static const String register = '/register';

@@ -1,4 +1,3 @@
-
 part of 'teachers_bloc.dart';
 
 abstract class TeachersEvent extends Equatable {
@@ -13,3 +12,17 @@ class FetchTeachers extends TeachersEvent {
 }
 
 class FetchMoreTeachers extends TeachersEvent {}
+class DeleteTeacher extends TeachersEvent {
+  final int teacherId;
+  const DeleteTeacher(this.teacherId);
+
+  @override
+  List<Object> get props => [teacherId];
+}
+class AddNewTeacherToList extends TeachersEvent {
+  final Teacher newTeacher;
+  const AddNewTeacherToList(this.newTeacher);
+
+  @override
+  List<Object?> get props => [newTeacher];
+}

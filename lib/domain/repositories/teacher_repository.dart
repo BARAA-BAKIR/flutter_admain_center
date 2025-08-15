@@ -48,12 +48,6 @@ abstract class TeacherRepository {
   });
    Future<Either<Failure, Map<String, dynamic>>> getNotifications(int page);
    Future<Either<Failure, void>> markNotificationAsRead(String notificationId);
-  // الدوال التالية كانت موجودة في الكود القديم لكنها لم تُعدّل
-  // وهي دوال لا تتبع النمط الجديد `Either` وغير موجودة في طبقة التنفيذ
-  // لذلك قمت بإزالتها أو تعديلها لتصبح متوافقة.
-  // Future<bool> syncMyHalaqa();
-  // Future<bool> syncLevels();
-  // Future<bool> syncFollowUpAndDuty(int studentId, String date);
-  // Future<Either<Failure, StudentProfileModel>> fetchStudentProfile(int studentId); // تم دمجها مع getStudentProfile
-  // Future<MyhalaqaModel> mergeWithLocalFollowUps(MyhalaqaModel halaqa); // هذه دالة مساعدة، يجب أن تكون خاصة ولا تظهر في الواجهة
+  Future<Either<Failure, void>> markAttendanceOnly(int studentId, int halaqaId, bool isPresent);
+  
 }

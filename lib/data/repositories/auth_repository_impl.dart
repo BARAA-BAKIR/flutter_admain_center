@@ -1,6 +1,7 @@
 // lib/data/repositories/auth_repository_impl.dart
 
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:dartz/dartz.dart'; // استيراد مكتبة dartz
 import 'package:flutter_admain_center/core/error/failures.dart'; // استيراد كلاسات الأخطاء
@@ -40,7 +41,7 @@ class AuthRepositoryImpl implements AuthRepository {
   //     },
   //   );
   // }
-@override
+  @override
   Future<Either<Failure, UserModel>> login({
     required String email,
     required String password,
@@ -53,48 +54,44 @@ class AuthRepositoryImpl implements AuthRepository {
       fcmToken: fcmToken,
     );
 
-    return result.fold(
-      (failure) => Left(failure),
-      (data) async {
-        try {
-          final user = UserModel.fromJson(data, data['token']);
-          
-          // تخزين بيانات المستخدم الكاملة
-          final userJson = jsonEncode({
-            'id': user.id,
-            'name': user.name,
-            'email': user.email,
-            'token': user.token,
-            'roles': user.roles,
-          });
-          await storage.write(key: 'user_data', value: userJson);
-          
-          return Right(user);
-        } catch (e) {
-          return Left(ParsingFailure(message: 'فشل في تحليل بيانات المستخدم.',
-            details: e.toString(),));
-        }
-      },
-    );
+    return result.fold((failure) => Left(failure), (data) async {
+      try {
+        final user = UserModel.fromJson(data, data['token']);
+
+        // تخزين بيانات المستخدم الكاملة
+        final userJson = jsonEncode({
+          'id': user.id,
+          'name': user.name,
+          'email': user.email,
+          'token': user.token,
+          'roles': user.roles,
+        });
+        await storage.write(key: 'user_data', value: userJson);
+      log('user ${user}');
+        return Right(user);
+      } catch (e) {
+        return Left(
+          ParsingFailure(
+            message: 'فشل في تحليل بيانات المستخدم.',
+            details: e.toString(),
+          ),
+        );
+      }
+    });
   }
 
   @override
   Future<Either<Failure, List<CenterModel>>> getCenters() async {
     final result = await datasource.getCenters();
-    return result.fold(
-      (failure) => Left(failure),
-      (centers) => Right(centers),
-    );
+    return result.fold((failure) => Left(failure), (centers) => Right(centers));
   }
 
   @override
   Future<Either<Failure, Map<String, dynamic>>> registerTeacher(
-      RegistrationModel data) async {
+    RegistrationModel data,
+  ) async {
     final result = await datasource.registerTeacher(data);
-    return result.fold(
-      (failure) => Left(failure),
-      (data) => Right(data),
-    );
+    return result.fold((failure) => Left(failure), (data) => Right(data));
   }
 
   // @override
@@ -109,10 +106,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> forgotPassword(String email) async {
     final result = await datasource.forgotPassword(email);
-    return result.fold(
-      (failure) => Left(failure),
-      (unit) => Right(unit),
-    );
+    return result.fold((failure) => Left(failure), (unit) => Right(unit));
   }
 
   @override
@@ -123,8 +117,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     final token = await storage.read(key: 'auth_token');
     if (token == null) {
-      return const Left(
-          CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
     final result = await datasource.changePassword(
       currentPassword: current,
@@ -132,24 +125,17 @@ class AuthRepositoryImpl implements AuthRepository {
       confirmPassword: confirm,
       token: token,
     );
-    return result.fold(
-      (failure) => Left(failure),
-      (data) => Right(data),
-    );
+    return result.fold((failure) => Left(failure), (data) => Right(data));
   }
 
   @override
   Future<Either<Failure, Map<String, dynamic>>> fetchProfile() async {
     final token = await storage.read(key: 'auth_token');
     if (token == null) {
-      return const Left(
-          CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
     final result = await datasource.fetchProfile(token);
-    return result.fold(
-      (failure) => Left(failure),
-      (data) => Right(data),
-    );
+    return result.fold((failure) => Left(failure), (data) => Right(data));
   }
 
   @override
@@ -161,8 +147,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     final token = await storage.read(key: 'auth_token');
     if (token == null) {
-      return const Left(
-          CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
     final result = await datasource.updateProfile(
       token: token,
@@ -171,12 +156,10 @@ class AuthRepositoryImpl implements AuthRepository {
       address: address,
       passwordConfirm: passwordConfirm,
     );
-    return result.fold(
-      (failure) => Left(failure),
-      (data) => Right(data),
-    );
+    return result.fold((failure) => Left(failure), (data) => Right(data));
   }
-   @override
+
+  @override
   Future<Either<Failure, void>> resetPassword({
     required String email,
     required String token,
@@ -192,13 +175,15 @@ class AuthRepositoryImpl implements AuthRepository {
     );
   }
 
-   @override
+  @override
   Future<Either<Failure, void>> logout() async {
-     final token = await storage.read(key: 'user_data'); // اقرأ بيانات المستخدم بدلاً من التوكن فقط
-    
+    final token = await storage.read(
+      key: 'user_data',
+    ); // اقرأ بيانات المستخدم بدلاً من التوكن فقط
+
     // حذف بيانات المستخدم من التخزين الآمن
     await storage.delete(key: 'user_data');
-    
+
     // مسح البيانات المحلية من sqflite
     await localDatasource.clearAllData();
 
@@ -211,25 +196,24 @@ class AuthRepositoryImpl implements AuthRepository {
     // استخراج التوكن الفعلي من بيانات المستخدم
     final userToken = jsonDecode(token)['token'];
     final _ = await datasource.logout(token: userToken);
-    
+
     // لا نهتم بنتيجة الخادم، المهم هو أننا حذفنا البيانات محلياً
     return const Right(null);
   }
 
-    @override
+  @override
   Future<Either<Failure, void>> updateNotificationStatus(bool status) async {
     final token = await storage.read(key: 'auth_token');
     if (token == null) {
-      return const Left(
-          CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
-    
+
     return await datasource.updateNotificationStatus(
       status: status,
       token: token,
     );
   }
-  
+
   @override
   Future<String?> getUserData() async {
     return await storage.read(key: 'user_data');

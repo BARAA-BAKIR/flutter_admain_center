@@ -93,8 +93,8 @@ class FollowUpState {
     this.saveStatus = SaveStatus.initial,
     this.savedPagesCount = 0,
     this.reviewedPagesCount = 0,
-    this.memorizationScore = 4, // ممتاز
-    this.reviewScore = 4, // ممتاز
+    this.memorizationScore = 0, // ممتاز
+    this.reviewScore = 0, // ممتاز
     this.dutyFromPage = 0,
     this.dutyToPage = 0,
     this.dutyRequiredParts = '',

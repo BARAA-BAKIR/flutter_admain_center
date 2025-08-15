@@ -10,18 +10,14 @@ class AllTeachersTab extends StatefulWidget {
 }
 
 class _AllTeachersTabState extends State<AllTeachersTab> {
-  void _showSuperAdminTeacherFilter() {
-    // TODO: Implement filter dialog for teachers (by center, etc.)
-    print("Show Super Admin Teacher Filter");
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         SearchAndFilterBar(
-          onFilterTap: _showSuperAdminTeacherFilter,
-          onSearchChanged: (query) { /* TODO: Implement search logic */ },
+         
+          onSearchChanged: (query) { /* TODO: Implement search logic */ }, hintText: '',
         ),
         Expanded(
           // TODO: Replace with BlocBuilder for real data

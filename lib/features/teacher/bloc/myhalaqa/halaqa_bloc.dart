@@ -1,10 +1,11 @@
 // lib/features/teacher/bloc/halaqa_bloc.dart
 
 import 'package:bloc/bloc.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_admain_center/features/teacher/bloc/dashboard/dashboard_bloc.dart';
+//import 'package:intl/intl.dart';
  // Import failures
-import 'package:flutter_admain_center/data/models/teacher/daily_follow_up_model.dart';
-import 'package:flutter_admain_center/data/models/teacher/duty_model.dart';
+//import 'package:flutter_admain_center/data/models/teacher/daily_follow_up_model.dart';
+//import 'package:flutter_admain_center/data/models/teacher/duty_model.dart';
 import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
 import 'package:flutter_admain_center/data/models/teacher/myhalaqa_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/student_model.dart';
@@ -14,9 +15,10 @@ part 'halaqa_state.dart';
 
 class HalaqaBloc extends Bloc<HalaqaEvent, HalaqaState> {
   final TeacherRepository _teacherRepository;
-
-  HalaqaBloc({required TeacherRepository teacherRepository})
+ final DashboardBloc _dashboardBloc;
+  HalaqaBloc({required TeacherRepository teacherRepository, required DashboardBloc dashboardBloc,})
       : _teacherRepository = teacherRepository,
+        _dashboardBloc = dashboardBloc,
         super(const HalaqaState()) {
     on<FetchHalaqaData>(_onFetchHalaqaData);
     on<MarkStudentAttendance>(_onMarkStudentAttendance);
@@ -42,78 +44,103 @@ class HalaqaBloc extends Bloc<HalaqaEvent, HalaqaState> {
           halaqa: halaqaData,
           error: null,
         ));
+          if (halaqaData.idhalaqa != 0) {
+          _dashboardBloc.add(LoadDashboardData(halaqaId: halaqaData.idhalaqa));
+        }
       },
     );
   }
 
   Future<void> _onMarkStudentAttendance(MarkStudentAttendance event, Emitter<HalaqaState> emit) async {
-    if (state.halaqa == null) return;
+   if (state.halaqa == null) return;
 
-    // 1. Update the UI instantly for a responsive feel
-    final updatedStudents = List<Student>.from(state.halaqa!.students);
-    final studentIndex = updatedStudents.indexWhere((s) => s.id == event.studentId);
+    // تحديث الواجهة فوراً (لتحسين تجربة المستخدم)
+    final updatedStudents = state.halaqa!.students.map((s) {
+      if (s.id == event.studentId) {
+        return s.copyWith(attendanceStatus: event.newStatus);
+      }
+      return s;
+    }).toList();
+    emit(state.copyWith(halaqa: state.halaqa!.copyWith(students: updatedStudents)));
 
-    if (studentIndex != -1) {
-      updatedStudents[studentIndex] = updatedStudents[studentIndex].copyWith(
-        attendanceStatus: event.newStatus,
-      );
-      emit(state.copyWith(
-        halaqa: state.halaqa!.copyWith(students: updatedStudents),
-      ));
-    }
-
-    // 2. Create a complete follow-up record in the background
-    // Use fold() to handle the result from the repository
-    final existingDataResult = await _teacherRepository.getFollowUpAndDutyForStudent(
+    // ====================  هنا هو الإصلاح ====================
+    // استدعاء الدالة الجديدة في الـ Repository
+    await _teacherRepository.markAttendanceOnly(
       event.studentId,
-      DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      state.halaqa!.idhalaqa,
+      event.newStatus == AttendanceStatus.present,
     );
 
-    existingDataResult.fold(
-      // Failure case for getting existing data (e.g., connection failure)
-      (failure) {
-        print("Error getting existing data for attendance: ${failure.message}");
-        // You can emit a new state with an error message here if needed.
-      },
-      // Success case for getting existing data
-      (existingData) async {
-        final DailyFollowUpModel? existingFollowUp = existingData['followUp'];
-        final DutyModel? existingDuty = existingData['duty'];
+    // بعد تسجيل الحضور، يجب أن نعيد تحميل البيانات لتعكس التغييرات
+    // هذا يضمن أن hasTodayFollowUp تصبح true
+    add(FetchHalaqaData());
+    // if (state.halaqa == null) return;
 
-        final followUpToSave = DailyFollowUpModel(
-          studentId: event.studentId,
-          halaqaId: state.halaqa!.idhalaqa,
-          date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
-          attendance: event.newStatus == AttendanceStatus.present ? 1 : 0,
-          savedPagesCount: existingFollowUp?.savedPagesCount ?? 0,
-          reviewedPagesCount: existingFollowUp?.reviewedPagesCount ?? 0,
-          memorizationScore: existingFollowUp?.memorizationScore ?? 4,
-          reviewScore: existingFollowUp?.reviewScore ?? 4,
-        );
+    // // 1. Update the UI instantly for a responsive feel
+    // final updatedStudents = List<Student>.from(state.halaqa!.students);
+    // final studentIndex = updatedStudents.indexWhere((s) => s.id == event.studentId);
 
-        final dutyToSave = DutyModel(
-          studentId: event.studentId,
-          startPage: existingDuty?.startPage ?? 0,
-          endPage: existingDuty?.endPage ?? 0,
-          requiredParts: existingDuty?.requiredParts ?? '',
-        );
+    // if (studentIndex != -1) {
+    //   updatedStudents[studentIndex] = updatedStudents[studentIndex].copyWith(
+    //     attendanceStatus: event.newStatus,
+    //   );
+    //   emit(state.copyWith(
+    //     halaqa: state.halaqa!.copyWith(students: updatedStudents),
+    //   ));
+    // }
 
-        // 3. Save the record using the repository and handle the result with fold()
-        final storeResult = await _teacherRepository.storeFollowUpAndDuty(followUpToSave, dutyToSave);
+    // // 2. Create a complete follow-up record in the background
+    // // Use fold() to handle the result from the repository
+    // final existingDataResult = await _teacherRepository.getFollowUpAndDutyForStudent(
+    //   event.studentId,
+    //   DateFormat('yyyy-MM-dd').format(DateTime.now()),
+    // );
 
-        storeResult.fold(
-          // Failure case for storing data
-          (failure) {
-            print("Error saving attendance in background: ${failure.message}");
-            // You can emit a state to show an error here
-          },
-          // Success case for storing data
-          (isSynced) {
-            print("✅ Attendance saved successfully for student: ${event.studentId}. Synced: $isSynced");
-            // You can emit a state to show a success message here
-          },
-        );
-      },
-    );
+    // existingDataResult.fold(
+    //   // Failure case for getting existing data (e.g., connection failure)
+    //   (failure) {
+    //     print("Error getting existing data for attendance: ${failure.message}");
+    //     // You can emit a new state with an error message here if needed.
+    //   },
+    //   // Success case for getting existing data
+    //   (existingData) async {
+    //     final DailyFollowUpModel? existingFollowUp = existingData['followUp'];
+    //     final DutyModel? existingDuty = existingData['duty'];
+
+    //     final followUpToSave = DailyFollowUpModel(
+    //       studentId: event.studentId,
+    //       halaqaId: state.halaqa!.idhalaqa,
+    //       date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+    //       attendance: event.newStatus == AttendanceStatus.present ? 1 : 0,
+    //       savedPagesCount: existingFollowUp?.savedPagesCount ?? 0,
+    //       reviewedPagesCount: existingFollowUp?.reviewedPagesCount ?? 0,
+    //       memorizationScore: existingFollowUp?.memorizationScore ?? 4,
+    //       reviewScore: existingFollowUp?.reviewScore ?? 4,
+    //     );
+
+    //     final dutyToSave = DutyModel(
+    //       studentId: event.studentId,
+    //       startPage: existingDuty?.startPage ?? 0,
+    //       endPage: existingDuty?.endPage ?? 0,
+    //       requiredParts: existingDuty?.requiredParts ?? '',
+    //     );
+
+    //     // 3. Save the record using the repository and handle the result with fold()
+    //     final storeResult = await _teacherRepository.storeFollowUpAndDuty(followUpToSave, dutyToSave);
+
+    //     storeResult.fold(
+    //       // Failure case for storing data
+    //       (failure) {
+    //         print("Error saving attendance in background: ${failure.message}");
+    //         // You can emit a state to show an error here
+    //       },
+    //       // Success case for storing data
+    //       (isSynced) {
+    //         print("✅ Attendance saved successfully for student: ${event.studentId}. Synced: $isSynced");
+    //         // You can emit a state to show a success message here
+    //       },
+    //     );
+    //   },
+    // );
   }
 }

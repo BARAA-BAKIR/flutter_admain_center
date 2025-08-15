@@ -4,8 +4,8 @@ import 'package:equatable/equatable.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter_admain_center/domain/repositories/center_maneger_repository.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-
+//import 'package:share_plus/share_plus.dart';
+import 'package:open_filex/open_filex.dart';
 part 'reports_event.dart';
 part 'reports_state.dart';
 
@@ -56,8 +56,8 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
             File(filePath)
               ..createSync(recursive: true)
               ..writeAsBytesSync(fileBytes);
-            
-            await Share.shareXFiles([XFile(filePath)], text: 'تقرير بيانات الطلاب');
+            await OpenFilex.open(filePath);
+            // await Share.shareXFiles([XFile(filePath)], text: 'تقرير بيانات الطلاب');
             emit(state.copyWith(status: ReportGenerationStatus.success, message: 'تم إنشاء ومشاركة التقرير بنجاح.'));
           } else {
             throw Exception('فشل حفظ ملف Excel.');
@@ -70,28 +70,60 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
   }
 
    Future<void> _onGenerateAttendanceReport(GenerateAttendanceReport event, Emitter<ReportsState> emit) async {
-        emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري جلب بيانات الحضور...'));
-        
-        // 1. استدعاء الدالة من الـ Repository
-        final result = await centerManagerRepository.getAttendanceReportData(
-            startDate: event.startDate,
-            endDate: event.endDate,
-            halaqaId: event.halaqaId,
-        );
+    emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري جلب بيانات الحضور...'));
 
-        await result.fold(
-            (failure) async => emit(state.copyWith(status: ReportGenerationStatus.failure, message: failure.message)),
-            (reportData) async {
-                emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري إنشاء ملف Excel...'));
-                
-                // 2. منطق إنشاء ملف Excel من البيانات المجلوبة
-                // ... (نفس منطق إنشاء Excel السابق ولكن ببيانات الحضور)
-                
-                // 3. مشاركة الملف
-                // ...
-                
-                emit(state.copyWith(status: ReportGenerationStatus.success, message: 'تم إنشاء تقرير الحضور بنجاح.'));
-            },
-        );
-    }
+    final result = await centerManagerRepository.getAttendanceReportData(
+      startDate: event.startDate,
+      endDate: event.endDate,
+      halaqaId: event.halaqaId,
+    );
+
+    await result.fold(
+      (failure) async => emit(state.copyWith(status: ReportGenerationStatus.failure, message: failure.message)),
+      (reportData) async {
+        if (reportData.isEmpty) {
+          emit(state.copyWith(status: ReportGenerationStatus.success, message: 'لا توجد سجلات حضور في الفترة المحددة.'));
+          return;
+        }
+
+        emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري إنشاء ملف Excel...'));
+        try {
+          var excel = Excel.createExcel();
+          Sheet sheet = excel['تقرير الحضور'];
+
+          // إضافة العناوين
+          final headers = ['اسم الطالب', 'اسم الحلقة', 'التاريخ', 'الحالة'];
+          sheet.appendRow(headers.map((header) => TextCellValue(header)).toList());
+
+          // إضافة بيانات الحضور
+          for (final record in reportData) {
+            sheet.appendRow([
+              TextCellValue((record['first_name'] ?? '') + ' ' + (record['last_name'] ?? '')),
+              TextCellValue(record['halaqa_name']?.toString() ?? 'N/A'),
+              TextCellValue(record['date']?.toString() ?? 'N/A'),
+              TextCellValue(record['status'] == 'present' ? 'حاضر' : 'غائب'),
+            ]);
+          }
+
+          // حفظ ومشاركة الملف
+          final directory = await getTemporaryDirectory();
+          final filePath = '${directory.path}/attendance_report_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+          final fileBytes = excel.save();
+
+          if (fileBytes != null) {
+            File(filePath)
+              ..createSync(recursive: true)
+              ..writeAsBytesSync(fileBytes);
+ await OpenFilex.open(filePath);
+            // await Share.shareXFiles([XFile(filePath)], text: 'تقرير الحضور والغياب');
+            emit(state.copyWith(status: ReportGenerationStatus.success, message: 'تم إنشاء ومشاركة التقرير بنجاح.'));
+          } else {
+            throw Exception('فشل حفظ ملف Excel.');
+          }
+        } catch (e) {
+          emit(state.copyWith(status: ReportGenerationStatus.failure, message: 'حدث خطأ أثناء إنشاء الملف: ${e.toString()}'));
+        }
+      },
+    );
+  }
 }

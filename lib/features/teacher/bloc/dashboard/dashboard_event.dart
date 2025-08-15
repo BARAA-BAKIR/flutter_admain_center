@@ -8,4 +8,7 @@ class LoadDashboardData extends DashboardEvent {
   LoadDashboardData({required this.halaqaId});
 }
 
-class SyncAllDataRequested extends DashboardEvent {}
+class SyncAllDataRequested extends DashboardEvent {
+  final int halaqaId; // ✅ إضافة هذا الحقل
+  SyncAllDataRequested(this.halaqaId);
+}

@@ -52,6 +52,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SnackBar(
                     content: Text('لا يمكن التعديل قبل تحميل البيانات بنجاح.'),
                     backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
                   ),
                 );
               }

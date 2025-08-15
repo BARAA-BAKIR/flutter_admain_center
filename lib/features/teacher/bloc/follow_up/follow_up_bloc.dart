@@ -116,7 +116,7 @@ class FollowUpBloc extends Bloc<FollowUpEvent, FollowUpState> {
         emit(state.copyWith(
           isSaving: false,
           error: 'فشل حفظ البيانات: ${failure.message}',
-          saveStatus: SaveStatus.initial, // أو أي حالة فشل مناسبة
+         // saveStatus: SaveStatus.initial, // أو أي حالة فشل مناسبة
         ));
       },
       // حالة النجاح (Right)

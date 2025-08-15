@@ -51,7 +51,7 @@ class CentersManagementScreen extends StatelessWidget {
             title: 'المركز رقم ${index + 1}',
             subtitle: 'المدير المسؤول: أ. فلان الفلاني',
             // يمكنك استخدام أيقونة مختلفة هنا
-            imageUrl: null, // Placeholder for a different icon
+            // Placeholder for a different icon
             onMoreTap: () => _showCenterOptions(context),
           );
         },

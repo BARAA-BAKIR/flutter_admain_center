@@ -29,7 +29,7 @@ class HalaqasState extends Equatable {
       halaqas: halaqas ?? this.halaqas,
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       currentPage: currentPage ?? this.currentPage,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage,
     );
   }
 

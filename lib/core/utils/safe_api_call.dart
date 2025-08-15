@@ -1,46 +1,39 @@
-// lib/core/utils/safe_api_call.dart
-import 'dart:developer';
-
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_admain_center/core/error/failures.dart';
 
-typedef ApiCall<T> = Future<T> Function();
-
-Future<Either<Failure, T>> safeApiCall<T>(ApiCall<T> apiCall) async {
+// دالة مساعدة لتغليف استدعاءات الـ API بأمان
+Future<Either<Failure, T>> safeApiCall<T>(Future<T> Function() apiCall) async {
   try {
     final result = await apiCall();
     return Right(result);
   } on DioException catch (e) {
-    log('DioException: ${e.response?.data ?? e.message}');
-    if (e.response != null) {
-      final responseBody = e.response!.data;
-      String errorMessage = "حدث خطأ من الخادم";
-      
-      if (responseBody is Map && responseBody.containsKey('errors')) {
-        errorMessage = responseBody['errors'].values.first[0];
-      } else if (responseBody is Map && responseBody.containsKey('message')) {
-        errorMessage = responseBody['message'];
+    // ==================== هنا هو التعديل الأهم ====================
+    if (e.response?.statusCode == 422 && e.response?.data != null) {
+      // هذا خطأ تحقق من الصحة (Validation Error)
+      final errors = e.response!.data['errors'] as Map<String, dynamic>?;
+      if (errors != null && errors.isNotEmpty) {
+        // استخراج أول رسالة خطأ من القائمة
+        final firstErrorField = errors.keys.first;
+        final firstErrorMessage = (errors[firstErrorField] as List).first;
+        // إرجاع رسالة خطأ واضحة للمستخدم
+        return Left(ServerFailure(message: firstErrorMessage));
       }
-      return Left(ServerFailure(message: errorMessage));
     }
-    
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return Left(ConnectionFailure(message: 'انتهت مهلة الاتصال بالخادم.'));
-      case DioExceptionType.badResponse:
-        return Left(ServerFailure(message: 'استجابة غير صالحة من الخادم.'));
-      case DioExceptionType.cancel:
-        return Left(UnexpectedFailure(message: 'تم إلغاء الطلب.'));
-      default:
-        return Left(ConnectionFailure(message: 'فشل الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت.'));
+    // =============================================================
+
+    // التعامل مع باقي أخطاء Dio
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.connectionError) {
+      return const Left(ConnectionFailure(message: 'فشل الاتصال بالخادم، يرجى التحقق من اتصالك بالإنترنت.'));
     }
+    // التعامل مع الأخطاء العامة من الخادم
+    final message = e.response?.data['message'] ?? 'حدث خطأ غير متوقع في الخادم.';
+    return Left(ServerFailure(message: message));
   } catch (e) {
-    log('Unexpected Error: $e');
-    return Left(UnexpectedFailure(message: 'حدث خطأ غير متوقع في التطبيق.'));
+    // التعامل مع أي أخطاء أخرى غير متوقعة (مثل أخطاء التحويل)
+    return Left(UnexpectedFailure(message: 'حدث خطأ غير متوقع في التطبيق: ${e.toString()}'));
   }
 }
-
-

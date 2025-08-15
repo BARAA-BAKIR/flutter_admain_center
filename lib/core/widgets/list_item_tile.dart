@@ -6,14 +6,14 @@ import 'package:flutter_admain_center/core/constants/app_colors.dart';
 class ListItemTile extends StatelessWidget {
   final String title;
   final String subtitle;
-  final String? imageUrl; // رابط صورة الطالب
+  final VoidCallback? onTap; 
   final VoidCallback onMoreTap;
 
   const ListItemTile({
     super.key,
     required this.title,
     required this.subtitle,
-    this.imageUrl,
+    this.onTap ,
     required this.onMoreTap,
   });
 

@@ -10,7 +10,7 @@ class CenterAddStudentState extends Equatable {
   final List<LevelModel> levels;
   final bool isLoadingLevels;
   final int? selectedLevelId;
-  final List<Halaqa> halaqas;
+  final List<HalaqaNameModel> halaqas;
   final bool isLoadingHalaqas;
   final int? selectedHalaqaId;
   final String? errorMessage;
@@ -37,7 +37,7 @@ class CenterAddStudentState extends Equatable {
     List<LevelModel>? levels,
     bool? isLoadingLevels,
     int? selectedLevelId,
-    List<Halaqa>? halaqas,
+    List<HalaqaNameModel>? halaqas,
     bool? isLoadingHalaqas,
     int? selectedHalaqaId,
     String? errorMessage,

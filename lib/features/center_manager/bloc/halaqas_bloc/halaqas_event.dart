@@ -12,6 +12,7 @@ class FetchHalaqas extends HalaqasEvent {
 }
 
 class FetchMoreHalaqas extends HalaqasEvent {}
+
 class DeleteHalaqa extends HalaqasEvent {
   final int halaqaId;
   const DeleteHalaqa(this.halaqaId);

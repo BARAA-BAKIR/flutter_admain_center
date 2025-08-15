@@ -1,5 +1,6 @@
 // lib/data/repositories/teacher_repository_impl.dart
 
+import 'dart:convert';
 import 'dart:developer';
 import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_admain_center/data/models/teacher/duty_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/halaqa_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/level_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/myhalaqa_model.dart';
+import 'package:flutter_admain_center/data/models/teacher/notification_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/student_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/student_profile_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/teacher_profile_model.dart';
@@ -32,41 +34,109 @@ class TeacherRepositoryImpl implements TeacherRepository {
     required this.storage,
   });
 
+  /// دالة جلب التوكن
+  Future<String?> getToken() async {
+    final userDataJson = await storage.read(key: 'user_data');
+    if (userDataJson == null) return null;
+    return jsonDecode(userDataJson)['token'];
+  }
   //====================================================================
   // --- دوال جلب البيانات (Getters) ---
   //====================================================================
 
+  // @override
+  // Future<Either<Failure, MyhalaqaModel>> getMyHalaqaWithLocalData() async {
+  //   // 1. اقرأ بيانات المستخدم المخزنة
+  //  // final String? userJson = await storage.read(key: 'user_data');
+
+  //   // 3. قم بفك تشفير JSON للحصول على البيانات واستخراج التوكن
+  //  // final userData = jsonDecode(userJson);
+  //   final String? token = await getToken();
+  //   log('Token: $token');
+  //   if (token == null) {
+  //     // 4. في حالة عدم وجود توكن داخل البيانات، اعرض خطأ
+  //     return const Left(
+  //       CacheFailure(message: 'الرمز المميز (token) غير موجود في البيانات.'),
+  //     );
+  //   }
+
+  //   // 5. استمر في تنفيذ باقي الدالة باستخدام التوكن الجديد
+  //   final result = await apiDatasource.getMyHalaqa(token);
+
+  //   return result.fold(
+  //     (failure) async {
+  //       log(
+  //         "API failure, falling back to local cache. Reason: ${failure.toString()}",
+  //       );
+  //       final cachedHalaqa = await localDatasource.getCachedHalaqaData();
+  //       if (cachedHalaqa != null) {
+  //         return Right(await _mergeWithLocalFollowUps(cachedHalaqa));
+  //       } else {
+  //         return Left(failure);
+  //       }
+  //     },
+  //     (data) async {
+  //       log("API Success: Fetched Halaqa data from server.");
+  //       final halaqaFromApi = MyhalaqaModel.fromJson(data);
+  //       await localDatasource.cacheHalaqaData(halaqaFromApi);
+  //       log("Cache Success: Saved latest Halaqa data locally.");
+  //       return Right(await _mergeWithLocalFollowUps(halaqaFromApi));
+  //     },
+  //   );
+  // }
   @override
   Future<Either<Failure, MyhalaqaModel>> getMyHalaqaWithLocalData() async {
-    final String? token = await storage.read(key: 'auth_token');
-    if (token == null) {
+    final String? token = await getToken();
+    if (token == null)
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+
+    final connectivityResult = await (Connectivity().checkConnectivity());
+    final hasInternet = connectivityResult != ConnectivityResult.none;
+
+    // إذا كان هناك إنترنت، نحاول الجلب من السيرفر أولاً
+    if (hasInternet) {
+      final result = await apiDatasource.getMyHalaqa(token);
+      return result.fold(
+        (failure) async {
+          // فشل السيرفر؟ لا مشكلة، نلجأ للكاش
+          log(
+            "API failure, falling back to local cache. Reason: ${failure.toString()}",
+          );
+          return _getCachedAndMergedHalaqa();
+        },
+        (data) async {
+          // نجح السيرفر؟ ممتاز، نخزن البيانات ونقوم بالدمج
+          log("API Success: Fetched Halaqa data from server.");
+          final halaqaFromApi = MyhalaqaModel.fromJson(data);
+          await localDatasource.cacheHalaqaData(halaqaFromApi);
+          log("Cache Success: Saved latest Halaqa data locally.");
+          return Right(await _mergeWithLocalFollowUps(halaqaFromApi));
+        },
+      );
+    } else {
+      // لا يوجد إنترنت؟ نذهب مباشرة إلى الكاش
+      log("🔌 Offline Mode: Fetching from local cache.");
+      return _getCachedAndMergedHalaqa();
     }
-    
-    final result = await apiDatasource.getMyHalaqa(token);
-    return result.fold(
-      (failure) async {
-        log("API failure, falling back to local cache. Reason: ${failure.toString()}");
-        final cachedHalaqa = await localDatasource.getCachedHalaqaData();
-        if (cachedHalaqa != null) {
-          return Right(await _mergeWithLocalFollowUps(cachedHalaqa));
-        } else {
-          return Left(failure);
-        }
-      },
-      (data) async {
-        log("API Success: Fetched Halaqa data from server.");
-        final halaqaFromApi = MyhalaqaModel.fromJson(data);
-        await localDatasource.cacheHalaqaData(halaqaFromApi);
-        log("Cache Success: Saved latest Halaqa data locally.");
-        return Right(await _mergeWithLocalFollowUps(halaqaFromApi));
-      },
-    );
+  }
+
+  // دالة مساعدة لجلب البيانات من الكاش ودمجها
+  Future<Either<Failure, MyhalaqaModel>> _getCachedAndMergedHalaqa() async {
+    final cachedHalaqa = await localDatasource.getCachedHalaqaData();
+    if (cachedHalaqa != null) {
+      return Right(await _mergeWithLocalFollowUps(cachedHalaqa));
+    } else {
+      return const Left(
+        CacheFailure(
+          message: 'لا يوجد اتصال بالإنترنت ولا توجد بيانات مخزنة محلياً.',
+        ),
+      );
+    }
   }
 
   @override
   Future<Either<Failure, void>> syncAllUnsyncedData() async {
-    final token = await storage.read(key: 'auth_token');
+    final String? token = await getToken();
     if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
@@ -74,14 +144,20 @@ class TeacherRepositoryImpl implements TeacherRepository {
     final unsyncedFollowUps = await localDatasource.getUnsyncedFollowUps();
     final unsyncedDuties = await localDatasource.getUnsyncedDuties();
 
-    final followUpsJson = unsyncedFollowUps.map((f) => f.toJsonForApi()).toList();
+    final followUpsJson =
+        unsyncedFollowUps.map((f) => f.toJsonForApi()).toList();
     final dutiesJson = unsyncedDuties.map((d) => d.toJsonForApi()).toList();
 
-    final filteredFollowUps = followUpsJson
-        .where((item) => (item['student_id'] ?? 0) > 0 && (item['group_id'] ?? 0) > 0)
-        .toList();
+    final filteredFollowUps =
+        followUpsJson
+            .where(
+              (item) =>
+                  (item['student_id'] ?? 0) > 0 && (item['group_id'] ?? 0) > 0,
+            )
+            .toList();
 
-    final filteredDuties = dutiesJson.where((item) => (item['student_id'] ?? 0) > 0).toList();
+    final filteredDuties =
+        dutiesJson.where((item) => (item['student_id'] ?? 0) > 0).toList();
 
     if (filteredFollowUps.isEmpty && filteredDuties.isEmpty) {
       log("⚠️ No valid data to sync.");
@@ -94,15 +170,12 @@ class TeacherRepositoryImpl implements TeacherRepository {
       duties: filteredDuties,
     );
 
-    return result.fold(
-      (failure) => Left(failure),
-      (data) async {
-        await localDatasource.markFollowUpsAsSynced(unsyncedFollowUps);
-        await localDatasource.markDutiesAsSynced(unsyncedDuties);
-        log("✅ Local DB updated after successful sync.");
-        return Right(data['message'] ?? 'تمت المزامنة بنجاح');
-      },
-    );
+    return result.fold((failure) => Left(failure), (data) async {
+      await localDatasource.markFollowUpsAsSynced(unsyncedFollowUps);
+      await localDatasource.markDutiesAsSynced(unsyncedDuties);
+      log("✅ Local DB updated after successful sync.");
+      return Right(data['message'] ?? 'تمت المزامنة بنجاح');
+    });
   }
 
   //====================================================================
@@ -118,10 +191,7 @@ class TeacherRepositoryImpl implements TeacherRepository {
       token: token,
       studentData: studentData,
     );
-    return result.fold(
-      (failure) => Left(failure),
-      (data) => Right(data),
-    );
+    return result.fold((failure) => Left(failure), (data) => Right(data));
   }
 
   //====================================================================
@@ -130,207 +200,275 @@ class TeacherRepositoryImpl implements TeacherRepository {
 
   Future<MyhalaqaModel> _mergeWithLocalFollowUps(MyhalaqaModel halaqa) async {
     final todayString = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final localFollowUps = await localDatasource.getFollowUpsForDate(todayString);
+    final localFollowUps = await localDatasource.getFollowUpsForDate(
+      todayString,
+    );
     if (localFollowUps.isEmpty) {
       return halaqa;
     }
     for (var student in halaqa.students) {
-      final localData = localFollowUps.firstWhereOrNull((f) => f.studentId == student.id);
+      final localData = localFollowUps.firstWhereOrNull(
+        (f) => f.studentId == student.id,
+      );
       if (localData != null) {
         student.attendanceStatus =
-            localData.attendance == 1 ? AttendanceStatus.present : AttendanceStatus.absent;
+            localData.attendance == 1
+                ? AttendanceStatus.present
+                : AttendanceStatus.absent;
         student.hasTodayFollowUp = true;
       }
     }
-    log("Merge Success: Merged ${localFollowUps.length} local follow-ups with Halaqa data.");
+    log(
+      "Merge Success: Merged ${localFollowUps.length} local follow-ups with Halaqa data.",
+    );
     return halaqa;
   }
 
   @override
-  Future<Either<Failure, StudentProfileModel>> getStudentProfile(int studentId) async {
-    final token = await storage.read(key: 'auth_token');
+  Future<Either<Failure, StudentProfileModel>> getStudentProfile(
+    int studentId,
+  ) async {
+    final String? token = await getToken();
     if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
     final result = await apiDatasource.getStudentProfile(token, studentId);
-    return result.fold(
-      (failure) => Left(failure),
-      (data) {
-        try {
-          // يجب أن نتحقق من أن `data` يحتوي على البيانات المطلوبة قبل التحويل
-          // وإلا قد يحدث خطأ في التحويل
-          return Right(StudentProfileModel.fromJson(data['data']));
-        } catch (e) {
-          log('Failed to parse StudentProfileModel: $e');
-          return const Left(UnexpectedFailure(message: 'فشل في تحليل بيانات ملف الطالب.'));
-        }
-      },
-    );
+    return result.fold((failure) => Left(failure), (data) {
+      try {
+        // يجب أن نتحقق من أن `data` يحتوي على البيانات المطلوبة قبل التحويل
+        // وإلا قد يحدث خطأ في التحويل
+        return Right(StudentProfileModel.fromJson(data['data']));
+      } catch (e) {
+        log('Failed to parse StudentProfileModel: $e');
+        return const Left(
+          UnexpectedFailure(message: 'فشل في تحليل بيانات ملف الطالب.'),
+        );
+      }
+    });
   }
 
   @override
   Future<Either<Failure, HalaqaModel>> fetchHalaqaInfo(int halaqaId) async {
-    final token = await storage.read(key: 'auth_token');
+    final String? token = await getToken();
     if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
     final result = await apiDatasource.fetchHalaqaInfo(token, halaqaId);
+    return result.fold((failure) => Left(failure), (data) {
+      try {
+        return Right(HalaqaModel.fromJson(data));
+      } catch (e) {
+        log('Failed to parse HalaqaModel: $e');
+        return const Left(
+          UnexpectedFailure(message: 'فشل في تحليل بيانات الحلقة.'),
+        );
+      }
+    });
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> getFollowUpAndDutyForStudent(
+    int studentId,
+    String date,
+  ) async {
+    // 1. البحث محلياً أولاً
+    DailyFollowUpModel? localFollowUp = await localDatasource.getFollowUp(
+      studentId,
+      date,
+    );
+    DutyModel? localDuty = await localDatasource.getDuty(studentId);
+
+    if (localFollowUp != null) {
+      print("Found local data for today. No need to fetch from server.");
+      return Right({'followUp': localFollowUp, 'duty': localDuty});
+    }
+
+    print("No local data for today. Fetching latest from server...");
+    final String? token = await getToken();
+    if (token == null) {
+      print("⚠️ No token, cannot fetch from server.");
+      return Right({'followUp': null, 'duty': localDuty});
+    }
+
+    // 3. نستخدم fold للتعامل مع نتيجة الـ API
+    final result = await apiDatasource.fetchLatestStudentData(
+      token: token,
+      studentId: studentId,
+    );
+
     return result.fold(
-      (failure) => Left(failure),
+      (failure) {
+        print(
+          "❌ Error fetching from server: ${failure.message}. Returning local duty if available.",
+        );
+        return Right({'followUp': null, 'duty': localDuty});
+      },
+      (serverData) async {
+        final DailyFollowUpModel? serverFollowUp = serverData['followUp'];
+        final DutyModel? serverDuty = serverData['duty'];
+
+        // نقوم بتخزين البيانات القادمة من السيرفر محلياً
+        if (serverFollowUp != null) {
+          await localDatasource.upsertFollowUp(
+            serverFollowUp.copyWith(isSynced: false),
+          );
+        }
+        if (serverDuty != null) {
+          await localDatasource.upsertDuty(
+            serverDuty.copyWith(isSynced: false),
+          );
+        }
+        return Right({'followUp': serverFollowUp, 'duty': serverDuty});
+      },
+    );
+  }
+
+  // @override
+  // Future<Either<Failure, bool>> storeFollowUpAndDuty(
+  //   DailyFollowUpModel followUp,
+  //   DutyModel duty,
+  // ) async {
+  //   final connectivityResult = await (Connectivity().checkConnectivity());
+  //   final hasInternet = connectivityResult != ConnectivityResult.none;
+  //   final String? token = await getToken();
+
+  //   if (!hasInternet || token == null) {
+  //     log("🔌 Offline Mode or no token: Saving locally.");
+  //     await localDatasource.upsertFollowUp(followUp.copyWith(isSynced: false));
+  //     await localDatasource.upsertDuty(duty.copyWith(isSynced: false));
+  //     return const Left(
+  //       ConnectionFailure(message: 'لا يوجد اتصال بالإنترنت. تم الحفظ محليًا.'),
+  //     );
+  //   }
+
+  //   final results = await Future.wait([
+  //     apiDatasource.storeFollowUp(
+  //       token: token,
+  //       followUpData: followUp.toJsonForApi(),
+  //     ),
+  //     apiDatasource.storeDuty(token: token, dutyData: duty.toJsonForApi()),
+  //   ]);
+
+  //   final followUpResult = results[0];
+  //   final dutyResult = results[1];
+
+  //   // إذا نجحت كلتا العمليتين
+  //   if (followUpResult.isRight() && dutyResult.isRight()) {
+  //     followUp = followUp.copyWith(isSynced: true);
+  //     duty = duty.copyWith(isSynced: true);
+  //     log("✅ Sync Success: Data sent to server.");
+  //     await localDatasource.upsertFollowUp(followUp);
+  //     await localDatasource.upsertDuty(duty);
+  //     return const Right(true);
+  //   } else {
+  //     // إذا فشلت إحدى العمليتين، نجد الخطأ الأول ونُرجعه
+  //     // ✅ الطريقة الصحيحة لاستخراج الخطأ
+  //     final Failure error =
+  //         followUpResult.isLeft()
+  //             ? (followUpResult as Left).value as Failure
+  //             : (dutyResult as Left).value as Failure;
+
+  //     log("❌ Sync Failed: Saving locally. Reason: ${error.message}");
+  //     await localDatasource.upsertFollowUp(followUp.copyWith(isSynced: false));
+  //     await localDatasource.upsertDuty(duty.copyWith(isSynced: false));
+  //     return Left(error);
+  //   }
+  // }
+@override
+  Future<Either<Failure, bool>> storeFollowUpAndDuty(DailyFollowUpModel followUp, DutyModel duty) async {
+    final connectivityResult = await (Connectivity().checkConnectivity());
+    final hasInternet = connectivityResult != ConnectivityResult.none;
+    final String? token = await getToken();
+
+    // إذا لم يكن هناك إنترنت أو توكن، نحفظ محلياً فقط
+    if (!hasInternet || token == null) {
+      log("🔌 Offline Mode or no token: Saving locally.");
+      await localDatasource.upsertFollowUp(followUp.copyWith(isSynced: false));
+      await localDatasource.upsertDuty(duty.copyWith(isSynced: false));
+      // نرجع Right(false) ليعرف البلوك أن الحفظ تم محلياً فقط
+      return const Right(false);
+    }
+
+    // إذا كان هناك إنترنت، نحاول الإرسال للسيرفر
+    final followUpResult = await apiDatasource.storeFollowUp(token: token, followUpData: followUp.toJsonForApi());
+    final dutyResult = await apiDatasource.storeDuty(token: token, dutyData: duty.toJsonForApi());
+
+    // إذا نجحت كلتا العمليتين
+    if (followUpResult.isRight() && dutyResult.isRight()) {
+      log("✅ Sync Success: Data sent to server.");
+      await localDatasource.upsertFollowUp(followUp.copyWith(isSynced: true));
+      await localDatasource.upsertDuty(duty.copyWith(isSynced: true));
+      // نرجع Right(true) ليعرف البلوك أن المزامنة نجحت
+      return const Right(true);
+    } else {
+      // إذا فشلت إحدى العمليتين، نحفظ محلياً
+      log("❌ Sync Failed: Saving locally.");
+      await localDatasource.upsertFollowUp(followUp.copyWith(isSynced: false));
+      await localDatasource.upsertDuty(duty.copyWith(isSynced: false));
+      // نرجع Right(false) ليعرف البلوك أن الحفظ تم محلياً
+      return const Right(false);
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<LevelModel>>> getLevels() async {
+    final String? token = await getToken();
+    if (token == null) {
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+    }
+    final result = await apiDatasource.getLevels(token);
+    return result.fold((failure) => Left(failure), (levels) => Right(levels));
+  }
+
+  @override
+  Future<Either<Failure, DashboardModel>> getDashboardSummary({
+    required int halaqaId,
+  }) async {
+    print("🔵 [Repository] بدء الطلب getDashboardSummary لحلقة $halaqaId");
+    final String? token = await getToken();
+    // هذا السطر يسبب خطأ
+
+    print("📌 [Repository] التوكن المسترجع: $token");
+
+    if (token == null) {
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+    }
+
+    final result = await apiDatasource.getDashboardSummary(
+      token: token,
+      halaqaId: halaqaId,
+    );
+    print("📩 [Repository] الرد الأولي من API: $result");
+
+    return result.fold(
+      (failure) {
+        print("❌ [Repository] فشل الاتصال: ${failure.message}");
+        return Left(failure);
+      },
       (data) {
         try {
-          return Right(HalaqaModel.fromJson(data));
+          print("✅ [Repository] البيانات قبل التحويل: $data");
+          return Right(DashboardModel.fromJson(data));
         } catch (e) {
-          log('Failed to parse HalaqaModel: $e');
-          return const Left(UnexpectedFailure(message: 'فشل في تحليل بيانات الحلقة.'));
+          print("❌ [Repository] خطأ في التحويل: $e");
+          return const Left(
+            UnexpectedFailure(message: 'فشل في تحليل بيانات لوحة التحكم.'),
+          );
         }
       },
     );
   }
 
-  
-@override
-Future<Either<Failure, Map<String, dynamic>>> getFollowUpAndDutyForStudent(
-    int studentId, String date) async {
-  // 1. البحث محلياً أولاً
-  DailyFollowUpModel? localFollowUp = await localDatasource.getFollowUp(studentId, date);
-  DutyModel? localDuty = await localDatasource.getDuty(studentId);
-
-  if (localFollowUp != null) {
-    print("Found local data for today. No need to fetch from server.");
-    return Right({'followUp': localFollowUp, 'duty': localDuty});
-  }
-
-  print("No local data for today. Fetching latest from server...");
-  final token = await storage.read(key: 'auth_token');
-  if (token == null) {
-    print("⚠️ No token, cannot fetch from server.");
-    return Right({'followUp': null, 'duty': localDuty});
-  }
-
-  // 3. نستخدم fold للتعامل مع نتيجة الـ API
-  final result = await apiDatasource.fetchLatestStudentData(
-    token: token,
-    studentId: studentId,
-  );
-
-  return result.fold(
-    (failure) {
-      print("❌ Error fetching from server: ${failure.message}. Returning local duty if available.");
-      return Right({'followUp': null, 'duty': localDuty});
-    },
-    (serverData) async {
-      final DailyFollowUpModel? serverFollowUp = serverData['followUp'];
-      final DutyModel? serverDuty = serverData['duty'];
-
-      // نقوم بتخزين البيانات القادمة من السيرفر محلياً
-      if (serverFollowUp != null) {
-        await localDatasource.upsertFollowUp(serverFollowUp.copyWith(isSynced: false));
-      }
-      if (serverDuty != null) {
-        await localDatasource.upsertDuty(serverDuty.copyWith(isSynced: false));
-      }
-      return Right({'followUp': serverFollowUp, 'duty': serverDuty});
-    },
-  );
-}
-@override
-Future<Either<Failure, bool>> storeFollowUpAndDuty(
-    DailyFollowUpModel followUp, DutyModel duty) async {
-  final connectivityResult = await (Connectivity().checkConnectivity());
-  final hasInternet = connectivityResult != ConnectivityResult.none;
-  final token = await storage.read(key: 'auth_token');
-
-  if (!hasInternet || token == null) {
-    log("🔌 Offline Mode or no token: Saving locally.");
-    await localDatasource.upsertFollowUp(followUp.copyWith(isSynced: false));
-    await localDatasource.upsertDuty(duty.copyWith(isSynced: false));
-    return const Left(
-        ConnectionFailure(message: 'لا يوجد اتصال بالإنترنت. تم الحفظ محليًا.'));
-  }
-
-  final results = await Future.wait([
-    apiDatasource.storeFollowUp(token: token, followUpData: followUp.toJsonForApi()),
-    apiDatasource.storeDuty(token: token, dutyData: duty.toJsonForApi()),
-  ]);
-
-  final followUpResult = results[0];
-  final dutyResult = results[1];
-
-  // إذا نجحت كلتا العمليتين
-  if (followUpResult.isRight() && dutyResult.isRight()) {
-    followUp = followUp.copyWith(isSynced: true);
-    duty = duty.copyWith(isSynced: true);
-    log("✅ Sync Success: Data sent to server.");
-    await localDatasource.upsertFollowUp(followUp);
-    await localDatasource.upsertDuty(duty);
-    return const Right(true);
-  } else {
-    // إذا فشلت إحدى العمليتين، نجد الخطأ الأول ونُرجعه
-    final Failure error = (followUpResult.isLeft() ?? dutyResult.isLeft()) as Failure;
-    log("❌ Sync Failed: Saving locally. Reason: ${error.message}");
-    await localDatasource.upsertFollowUp(followUp.copyWith(isSynced: false));
-    await localDatasource.upsertDuty(duty.copyWith(isSynced: false));
-    return Left(error);
-  }
-}
-
   @override
-  Future<Either<Failure, List<LevelModel>>> getLevels() async {
-    final token = await storage.read(key: 'auth_token');
-    if (token == null) {
-      return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
-    }
-    final result = await apiDatasource.getLevels(token);
-    return result.fold(
-      (failure) => Left(failure),
-      (levels) => Right(levels),
-    );
-  }
-@override
-Future<Either<Failure, DashboardModel>> getDashboardSummary({required int halaqaId}) async {
-  print("🔵 [Repository] بدء الطلب getDashboardSummary لحلقة $halaqaId");
-  final token = await storage.read(key: 'auth_token');
-  print("📌 [Repository] التوكن المسترجع: $token");
-
-  if (token == null) {
-    return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
-  }
-
-  final result = await apiDatasource.getDashboardSummary(
-    token: token,
-    halaqaId: halaqaId,
-  );
-  print("📩 [Repository] الرد الأولي من API: $result");
-
-  return result.fold(
-    (failure) {
-      print("❌ [Repository] فشل الاتصال: ${failure.message}");
-      return Left(failure);
-    },
-    (data) {
-      try {
-        print("✅ [Repository] البيانات قبل التحويل: $data");
-        return Right(DashboardModel.fromJson(data));
-      } catch (e) {
-        print("❌ [Repository] خطأ في التحويل: $e");
-        return const Left(UnexpectedFailure(message: 'فشل في تحليل بيانات لوحة التحكم.'));
-      }
-    },
-  );
-}
-
-
-@override
   Future<Either<Failure, TeacherProfile>> updateTeacherProfile({
-     String? firstName,
+    String? firstName,
     String? lastName,
     String? phone,
     String? address,
     // كلمة المرور الحالية دائماً مطلوبة للتأكيد
     required String currentPassword,
   }) async {
-    final String? token = await storage.read(key: 'auth_token');
+    final String? token = await getToken();
     if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
@@ -344,54 +482,115 @@ Future<Either<Failure, DashboardModel>> getDashboardSummary({required int halaqa
       currentPassword: currentPassword, // تم التغيير هنا
     );
 
-    return result.fold(
-      (failure) => Left(failure),
-      (data) {
-        try {
-          // الـ API يرجع الآن بيانات جاهزة للتحليل مباشرة
-          return Right(TeacherProfile.fromJson(data));
-        } catch (e) {
-          log('Failed to parse updated TeacherProfile: $e');
-          return const Left(UnexpectedFailure(message: 'فشل في تحليل بيانات الملف الشخصي المحدثة.'));
-        }
-      },
-    );
+    return result.fold((failure) => Left(failure), (data) {
+      try {
+        // الـ API يرجع الآن بيانات جاهزة للتحليل مباشرة
+        return Right(TeacherProfile.fromJson(data));
+      } catch (e) {
+        log('Failed to parse updated TeacherProfile: $e');
+        return const Left(
+          UnexpectedFailure(
+            message: 'فشل في تحليل بيانات الملف الشخصي المحدثة.',
+          ),
+        );
+      }
+    });
   }
-  
+
   // دالة getTeacherProfile تبقى كما هي تقريباً، فقط تأكد أنها تتعامل مع استجابة API الجديدة
   @override
   Future<Either<Failure, TeacherProfile>> getTeacherProfile() async {
-    final String? token = await storage.read(key: 'auth_token');
+    final String? token = await getToken();
     if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
 
     final result = await apiDatasource.getTeacherProfile(token);
+    return result.fold((failure) => Left(failure), (data) {
+      try {
+        // الـ API يرجع الآن بيانات جاهزة للتحليل مباشرة
+        return Right(TeacherProfile.fromJson(data));
+      } catch (e) {
+        log('Failed to parse TeacherProfile: $e');
+        return const Left(
+          UnexpectedFailure(message: 'فشل في تحليل بيانات الملف الشخصي.'),
+        );
+      }
+    });
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> getNotifications(
+    int page,
+  ) async {
+    final String? token = await getToken();
+    if (token == null)
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+    final result = await apiDatasource.getNotifications(token);
     return result.fold(
       (failure) => Left(failure),
       (data) {
         try {
-          // الـ API يرجع الآن بيانات جاهزة للتحليل مباشرة
-          return Right(TeacherProfile.fromJson(data));
+          final List<dynamic> notificationList = data['data'];
+          return Right((notificationList.map((json) => NotificationModel.fromJson(json)) as Map<String, dynamic>));
         } catch (e) {
-          log('Failed to parse TeacherProfile: $e');
-          return const Left(UnexpectedFailure(message: 'فشل في تحليل بيانات الملف الشخصي.'));
+          return Left(ParsingFailure(message: "Failed to parse notifications: ${e.toString()}"));
         }
       },
     );
   }
 
-   @override
-  Future<Either<Failure, Map<String, dynamic>>> getNotifications(int page) async {
-    final token = await storage.read(key: 'auth_token');
-    if (token == null) return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
-    return await apiDatasource.getNotifications(token, page);
+  @override
+  Future<Either<Failure, void>> markNotificationAsRead(
+    String notificationId,
+  ) async {
+    final String? token = await getToken();
+    if (token == null)
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+    return await apiDatasource.markNotificationAsRead(token, notificationId);
   }
 
+    // 3. دالة تسجيل الحضور (السيناريو الثالث)
   @override
-  Future<Either<Failure, void>> markNotificationAsRead(String notificationId) async {
-    final token = await storage.read(key: 'auth_token');
-    if (token == null) return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
-    return await apiDatasource.markNotificationAsRead(token, notificationId);
+  Future<Either<Failure, void>> markAttendanceOnly(int studentId, int halaqaId, bool isPresent) async {
+    // هذه الدالة تقوم بإنشاء سجل متابعة افتراضي وحفظه
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    
+    // نحاول جلب البيانات الموجودة للطالب لتجنب الكتابة فوقها
+    final existingData = await getFollowUpAndDutyForStudent(studentId, today);
+    
+    return existingData.fold(
+      (l) => Left(l), // إذا فشل جلب البيانات، نرجع الخطأ
+      (data) async {
+        final DailyFollowUpModel? existingFollowUp = data['followUp'];
+        final DutyModel? existingDuty = data['duty'];
+
+        final followUpToSave = DailyFollowUpModel(
+          studentId: studentId,
+          halaqaId: halaqaId,
+          date: today,
+          attendance: isPresent ? 1 : 0,
+          // نحافظ على القيم القديمة إن وجدت، وإلا نضع قيماً افتراضية
+          savedPagesCount: existingFollowUp?.savedPagesCount ?? 0,
+          reviewedPagesCount: existingFollowUp?.reviewedPagesCount ?? 0,
+          memorizationScore: existingFollowUp?.memorizationScore ?? 0,
+          reviewScore: existingFollowUp?.reviewScore ?? 0,
+        );
+
+        final dutyToSave = DutyModel(
+          studentId: studentId,
+          startPage: existingDuty?.startPage ?? 0,
+          endPage: existingDuty?.endPage ?? 0,
+          requiredParts: existingDuty?.requiredParts ?? '',
+        );
+
+        // نستدعي دالة الحفظ التي كتبناها في الأعلى
+        final result = await storeFollowUpAndDuty(followUpToSave, dutyToSave);
+        return result.fold(
+          (failure) => Left(failure),
+          (_) => const Right(null), // نجح الأمر
+        );
+      },
+    );
   }
 }

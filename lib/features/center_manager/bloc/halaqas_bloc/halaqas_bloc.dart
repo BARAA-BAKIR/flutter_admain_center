@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/halaqa_model.dart';
-
 import 'package:flutter_admain_center/domain/repositories/center_maneger_repository.dart';
 
 part 'halaqas_event.dart';
@@ -13,7 +12,7 @@ class HalaqasBloc extends Bloc<HalaqasEvent, HalaqasState> {
   HalaqasBloc({required this.centerManagerRepository}) : super(const HalaqasState()) {
     on<FetchHalaqas>(_onFetchHalaqas);
     on<FetchMoreHalaqas>(_onFetchMoreHalaqas);
-     on<DeleteHalaqa>(_onDeleteHalaqa);
+    on<DeleteHalaqa>(_onDeleteHalaqa);
   }
 
   Future<void> _onFetchHalaqas(FetchHalaqas event, Emitter<HalaqasState> emit) async {
@@ -42,7 +41,7 @@ class HalaqasBloc extends Bloc<HalaqasEvent, HalaqasState> {
     final result = await centerManagerRepository.getHalaqas(page: nextPage);
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)), // يمكنك تحديث الخطأ فقط
+      (failure) => emit(state.copyWith(errorMessage: failure.message)),
       (data) {
         final List<dynamic> listJson = data['data'];
         final newItems = listJson.map((json) => Halaqa.fromJson(json)).toList();
@@ -55,15 +54,16 @@ class HalaqasBloc extends Bloc<HalaqasEvent, HalaqasState> {
       },
     );
   }
+
   Future<void> _onDeleteHalaqa(DeleteHalaqa event, Emitter<HalaqasState> emit) async {
-        final result = await centerManagerRepository.deleteHalaqa(event.halaqaId);
-        result.fold(
-            (failure) { /* يمكنك إرسال حالة خطأ هنا */ },
-            (_) {
-                final updatedList = List<Halaqa>.from(state.halaqas)
-                    ..removeWhere((h) => h.id == event.halaqaId);
-                emit(state.copyWith(halaqas: updatedList));
-            },
-        );
-    }
+    final result = await centerManagerRepository.deleteHalaqa(event.halaqaId);
+    result.fold(
+      (failure) { /* يمكنك إرسال حالة خطأ هنا لإظهار SnackBar */ },
+      (_) {
+        final updatedList = List<Halaqa>.from(state.halaqas)
+          ..removeWhere((h) => h.id == event.halaqaId);
+        emit(state.copyWith(halaqas: updatedList));
+      },
+    );
+  }
 }

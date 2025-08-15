@@ -1,5 +1,6 @@
 // lib/data/datasources/auth_api_datasource.dart
 import 'package:dio/dio.dart';
+import 'package:flutter_admain_center/core/constants/app_routes.dart';
 import 'package:flutter_admain_center/core/error/failures.dart'; // تأكد من استيراد كلاسات الأخطاء
 import 'package:flutter_admain_center/core/utils/safe_api_call.dart'; // استيراد الدالة المساعدة
 import 'package:flutter_admain_center/data/models/teacher/center_model.dart';
@@ -9,7 +10,7 @@ import 'package:dartz/dartz.dart';
 class AuthApiDatasource {
   final Dio _dio;
 
-  static const String _baseUrl = "http://192.168.1.10:8000/api";
+  static final String _baseUrl =AppRoutes.url;
 
   AuthApiDatasource()
     : _dio = Dio(

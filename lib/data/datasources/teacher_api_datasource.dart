@@ -1,5 +1,6 @@
 // lib/data/datasources/teacher_api_datasource.dart
 import 'package:dio/dio.dart';
+import 'package:flutter_admain_center/core/constants/app_routes.dart';
 import 'package:flutter_admain_center/core/error/failures.dart';
 import 'package:flutter_admain_center/core/utils/safe_api_call.dart';
 import 'package:flutter_admain_center/data/models/teacher/add_student_model.dart';
@@ -11,7 +12,7 @@ import 'package:dartz/dartz.dart';
 class TeacherApiDatasource {
   final Dio _dio;
 
-  static const String _baseUrl = "http://192.168.1.10:8000/api";
+  static final String _baseUrl =AppRoutes.url;
 
   TeacherApiDatasource()
       : _dio = Dio(
@@ -204,12 +205,11 @@ Future<Either<Failure, Map<String, dynamic>>> getDashboardSummary({
     });
   }
 
-   Future<Either<Failure, Map<String, dynamic>>> getNotifications(String token, int page) async {
+   Future<Either<Failure, Map<String, dynamic>>> getNotifications(String token) async {
     return await safeApiCall(() async {
       final response = await _dio.get(
-        '/notifications',
+        '/teacher/notifications',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
-        queryParameters: {'page': page},
       );
       return response.data;
     });

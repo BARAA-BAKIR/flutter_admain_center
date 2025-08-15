@@ -1,14 +1,22 @@
+import 'dart:developer';
+
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_admain_center/core/constants/app_routes.dart';
 import 'package:flutter_admain_center/core/error/failures.dart';
 import 'package:flutter_admain_center/core/utils/safe_api_call.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/add_halaqa_model.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/add_teacher_model.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/halaqa_name_model.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/mosque_selection_model.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/teacher_selection_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/add_student_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/level_model.dart';
 
 class CenterManegerApiDatasource {
   final Dio _dio;
-  static const String _baseUrl = "http://192.168.1.10:8000/api";
-  CenterManegerApiDatasource()
+  static final String _baseUrl =AppRoutes.url;
+ CenterManegerApiDatasource()
     : _dio = Dio(
         BaseOptions(
           baseUrl: _baseUrl,
@@ -21,12 +29,56 @@ class CenterManegerApiDatasource {
         ),
       );
 
+  ///جلب الحلقات من اجل اختيار حلقة لاضافة طالب
+  // في CenterManagerDatasource
+
+  Future<Either<Failure, List<HalaqaNameModel>>> getHalaqasForSelection({
+    required String token,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/center/halaqas-selection',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      // ==================== DEBUGGING CODE ====================
+      print("--- DATASOURCE CHECK ---");
+      print(
+        "1. Raw response data type: ${response.data.runtimeType}",
+      ); // يجب أن يكون List
+      print("2. Raw response data: ${response.data}");
+      // ========================================================
+
+      final List<dynamic> data = response.data;
+      final result =
+          data.map((json) => HalaqaNameModel.fromJson(json)).toList();
+
+      // ==================== DEBUGGING CODE ====================
+      print(
+        "3. Parsed result type: ${result.runtimeType}",
+      ); // يجب أن يكون List<HalaqaNameModel>
+      print(
+        "4. Parsed result count: ${result.length}",
+      ); // يجب أن يكون أكبر من 0
+      if (result.isNotEmpty) {
+        print(
+          "5. First item name: ${result.first.name}",
+        ); // يجب أن يطبع اسم الحلقة
+      }
+      print("--- END DATASOURCE CHECK ---");
+      // ========================================================
+
+      return result;
+    });
+  }
+
   Future<Either<Failure, List<LevelModel>>> getLevels(String token) async {
     return await safeApiCall(() async {
       final response = await _dio.get(
         '/studentprogressstages/get',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
+      log('levels : ${response.data['data']}');
       final List<dynamic> data = response.data['data'];
       return data.map((json) => LevelModel.fromJson(json)).toList();
     });
@@ -34,12 +86,13 @@ class CenterManegerApiDatasource {
 
   Future<Either<Failure, Map<String, dynamic>>> addStudent({
     required AddStudentModel studentData,
+    required String token,
   }) async {
     return await safeApiCall(() async {
       final response = await _dio.post(
-        '/add/student/to/center',
+        '/center/students',
         data: studentData.toJson(),
-        // options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
     });
@@ -120,6 +173,7 @@ class CenterManegerApiDatasource {
             'search': searchQuery,
         },
       );
+
       return response.data;
     });
   }
@@ -128,11 +182,13 @@ class CenterManegerApiDatasource {
   Future<Either<Failure, Map<String, dynamic>>> getDashboardSummary({
     required String token,
   }) async {
+    print("🔵 [DATASOURCE] 1. Calling getDashboardSummary API...");
     return await safeApiCall(() async {
       final response = await _dio.get(
         '/center/dashboard-summary',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
+      print("✅ [DATASOURCE] 2. API Response Received. Data: ${response.data}");
       return response.data;
     });
   }
@@ -151,24 +207,10 @@ class CenterManegerApiDatasource {
     });
   }
 
-  ///جلب الحلقات من اجل اختيار حلقة لاضافة طالب
-  Future<Either<Failure, List<Map<String, dynamic>>>> getHalaqasForSelection({
+  // 1. جلب بيانات الفلاتر
+  Future<Either<Failure, Map<String, dynamic>>> getFiltersData({
     required String token,
   }) async {
-    return await safeApiCall(() async {
-      final response = await _dio.get(
-        '/center/halaqas-selection',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-
-      final List<dynamic> data = response.data;
-      return data.cast<Map<String, dynamic>>();
-    });
-  }
-
-
-   // 1. جلب بيانات الفلاتر
-  Future<Either<Failure, Map<String, dynamic>>> getFiltersData({required String token}) async {
     return await safeApiCall(() async {
       final response = await _dio.get(
         '/center/filters-data',
@@ -230,51 +272,52 @@ class CenterManegerApiDatasource {
     required int page,
     String? searchQuery,
     int? halaqaId, // فلتر الحلقة
-    int? levelId,  // فلتر المستوى
+    int? levelId, // فلتر المستوى
   }) async {
     return await safeApiCall(() async {
       final response = await _dio.get(
-        '/center/students',
+        '/center/students/for/center/maneger',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
         queryParameters: {
           'page': page,
           if (searchQuery != null) 'search': searchQuery,
           if (halaqaId != null) 'halaqa_id': halaqaId, // إرسال الفلتر
-          if (levelId != null) 'level_id': levelId,   // إرسال الفلتر
+          if (levelId != null) 'level_id': levelId, // إرسال الفلتر
         },
       );
+      log('student : ${response.data}');
       return response.data;
     });
   }
 
-      // ==================== دوال إدارة الحلقات ====================
-    Future<Either<Failure, Map<String, dynamic>>> addHalaqa({
-        required String token,
-        required Map<String, dynamic> halaqaData,
-    }) async {
-        return await safeApiCall(() async {
-            final response = await _dio.post('/center/halaqas', data: halaqaData, options: Options(headers: {'Authorization': 'Bearer $token'}));
-            return response.data;
-        });
-    }
 
-    Future<Either<Failure, void>> deleteHalaqa({
-        required String token,
-        required int halaqaId,
-    }) async {
-        return await safeApiCall(() async {
-            await _dio.delete('/center/halaqas/$halaqaId', options: Options(headers: {'Authorization': 'Bearer $token'}));
-        });
-    }
+  // Future<Either<Failure, Map<String, dynamic>>> addHalaqa({
+  //   required String token,
+  //   required Map<String, dynamic> halaqaData,
+  // }) async {
+  //   return await safeApiCall(() async {
+  //     final response = await _dio.post(
+  //       '/center/halaqas/add',
+  //       data: halaqaData,
+  //       options: Options(headers: {'Authorization': 'Bearer $token'}),
+  //     );
+  //     return response.data;
+  //   });
+  // }
 
-    Future<Either<Failure, List<Map<String, dynamic>>>> getTeachersForSelection({required String token}) async {
-        return await safeApiCall(() async {
-            final response = await _dio.get('/center/teachers-for-selection', options: Options(headers: {'Authorization': 'Bearer $token'}));
-            // نفترض أن الـ API يرجع قائمة مباشرة
-            return List<Map<String, dynamic>>.from(response.data['data']);
-        });
-    }
- Future<Either<Failure, List<Map<String, dynamic>>>> getAttendanceReport({
+  Future<Either<Failure, void>> deleteHalaqa({
+    required String token,
+    required int halaqaId,
+  }) async {
+    return await safeApiCall(() async {
+      await _dio.delete(
+        '/center/halaqas/$halaqaId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    });
+  }
+
+  Future<Either<Failure, List<Map<String, dynamic>>>> getAttendanceReport({
     required String token,
     required String startDate,
     required String endDate,
@@ -294,5 +337,154 @@ class CenterManegerApiDatasource {
       return List<Map<String, dynamic>>.from(response.data);
     });
   }
-  
+
+  Future<Either<Failure, Map<String, dynamic>>> getStudentDetails({
+    required String token,
+    required int studentId,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/center/students/$studentId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+
+  // ✅ أصبح يعيد قائمة من النماذج الجاهزة
+  Future<Either<Failure, List<TeacherSelectionModel>>> getTeachersForSelection({
+    required String token,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/center/teachers-for-selection',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      final List<dynamic> data = response.data;
+      // التحويل إلى نماذج يتم هنا فقط
+      return data.map((json) => TeacherSelectionModel.fromJson(json)).toList();
+    });
+  }
+
+  // ✅ أصبح يعيد قائمة من النماذج الجاهزة
+  Future<Either<Failure, List<MosqueSelectionModel>>> getMosquesForSelection({
+    required String token,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/center/mosques-for-selection',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      final List<dynamic> data = response.data;
+      // التحويل إلى نماذج يتم هنا فقط
+      return data.map((json) => MosqueSelectionModel.fromJson(json)).toList();
+    });
+  }
+
+  // ✅ هذه الدالة لا تزال تعيد Map لأنها عامة
+  Future<Either<Failure, List<Map<String, dynamic>>>>
+  getHalaqaTypesForSelection({required String token}) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/center/halaqa-types-selection',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return List<Map<String, dynamic>>.from(response.data);
+    });
+  }
+
+  // ✅ هذه الدالة يجب أن تستقبل المودل مباشرة
+  Future<Either<Failure, Map<String, dynamic>>> addHalaqa({
+    required String token,
+    required AddHalaqaModel halaqaData, // <-- يستقبل المودل
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.post(
+        '/center/halaqas/add',
+        data: halaqaData.toJson(), // <-- يستخدم دالة toJson
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+
+  // دالة لجلب بيانات الحلقة للتعديل
+  Future<Either<Failure, Map<String, dynamic>>> getHalaqaForEdit(
+    int halaqaId,
+    String token,
+  ) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/center/halaqas/$halaqaId/edit',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+
+  // دالة لإرسال التحديثات
+  Future<Either<Failure, void>> updateHalaqa(
+    int halaqaId,
+    AddHalaqaModel halaqaData,
+    String token,
+  ) async {
+    return await safeApiCall(() async {
+      await _dio.put(
+        // استخدام PUT للتحديث
+        '/center/halaqas/$halaqaId',
+        data: halaqaData.toJson(),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    });
+  }
+
+  Future<Either<Failure, void>> deleteTeacher({
+    required String token,
+    required int teacherId,
+  }) async {
+    return await safeApiCall(() async {
+      await _dio.delete(
+        '/center/teachers/$teacherId', // افترض أن هذا هو المسار الصحيح
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    });
+  }
+
+  Future<Either<Failure, Map<String, dynamic>>> addTeacher(AddTeacherModel data, String token) async {
+  return await safeApiCall(() async {
+    final response = await _dio.post('/center/teacher/add', data: data.toJson(),
+    options: Options(headers: {'Authorization': 'Bearer $token'}));
+     print("✅ [DATASOURCE] Success! Status: ${response.statusCode}, Response: ${response.data}");
+     
+    return response.data;
+  });
+}
+
+Future<Either<Failure, Map<String, dynamic>>> getTeacherDetails(int teacherId, String token) async {
+  return await safeApiCall(() async {
+    final response = await _dio.get('/center/teachers/$teacherId', 
+    options: Options(headers: {'Authorization': 'Bearer $token'}));
+    return response.data;
+  });
+}
+Future<Either<Failure, Map<String, dynamic>>> updateTeacherDetails(int teacherId, Map<String, dynamic> data, String token) async {
+  return await safeApiCall(() async {
+    final response = await _dio.put('/center/teacher/update/$teacherId', data: data, 
+     options: Options(headers: {'Authorization': 'Bearer $token'}));
+    return response.data;
+  });
+}
+
+ Future<Either<Failure, Map<String, dynamic>>> getHalaqaDetails({
+    required String token,
+    required int halaqaId,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/center/halaqas/$halaqaId', // المسار الجديد
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data['data']; // افترض أن البيانات تأتي داخل مفتاح 'data'
+    });
+  }
 }

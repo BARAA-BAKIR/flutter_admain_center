@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SearchAndFilterBar extends StatelessWidget {
-  final VoidCallback onFilterTap;
+ // final VoidCallback onFilterTap;
+ final String hintText;
   final Function(String) onSearchChanged;
 
   const SearchAndFilterBar({
     super.key,
-    required this.onFilterTap,
-    required this.onSearchChanged,
+  //  required this.onFilterTap,
+  required this.hintText,
+    required this.onSearchChanged, 
   });
 
   @override
@@ -22,7 +24,7 @@ class SearchAndFilterBar extends StatelessWidget {
             child: TextField(
               onChanged: onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'ابحث عن طالب بالاسم أو الرقم...',
+                hintText: hintText,
                 hintStyle: GoogleFonts.tajawal(),
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
@@ -37,17 +39,17 @@ class SearchAndFilterBar extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           // زر الفلترة
-          IconButton(
-            icon: const Icon(Icons.filter_list_rounded),
-            onPressed: onFilterTap,
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              padding: const EdgeInsets.all(12),
-            ),
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.filter_list_rounded),
+          //  // onPressed: onFilterTap,
+          //   style: IconButton.styleFrom(
+          //     backgroundColor: Colors.white,
+          //     shape: RoundedRectangleBorder(
+          //       borderRadius: BorderRadius.circular(12.0),
+          //     ),
+          //     padding: const EdgeInsets.all(12),
+          //   ),
+          // ),
         ],
       ),
     );

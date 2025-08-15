@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_admain_center/data/models/teacher/daily_follow_up_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/duty_model.dart';
@@ -463,7 +462,15 @@ class StudentProfileView extends StatelessWidget {
             ),
         build:
             (pw.Context pdfContext) => [
-              pw.Header(level: 1, text: '1. المعلومات الشخصية'),
+              pw.Container(
+                alignment: pw.Alignment.centerRight,
+                margin: const pw.EdgeInsets.symmetric(vertical: 8),
+                child: pw.Text(
+                  '1. المعلومات الشخصية',
+                  textDirection: pw.TextDirection.rtl,
+                  style: pw.TextStyle(font: boldFont, fontSize: 18),
+                ),
+              ),
               pw.Table(
                 border: pw.TableBorder.all(),
                 columnWidths: {
@@ -494,18 +501,25 @@ class StudentProfileView extends StatelessWidget {
                 ],
               ),
               pw.SizedBox(height: 20),
-              pw.Header(level: 1, text: '2. إحصائيات هذا الشهر'),
+              pw.Container(
+                alignment: pw.Alignment.centerRight,
+                margin: const pw.EdgeInsets.symmetric(vertical: 8),
+                child: pw.Text(
+                  '2. إحصائيات هذا الشهر',
+                  textDirection: pw.TextDirection.rtl,
+                  style: pw.TextStyle(font: boldFont, fontSize: 18),
+                ),
+              ),
               pw.Table(
                 border: pw.TableBorder.all(),
                 children: [
                   _buildTableRow(
                     'متوسط تقييم الحفظ',
-                    profile.stats.monthlyMemorizationAvg.toStringAsFixed(1) +
-                        ' / 5',
+                    '${profile.stats.monthlyMemorizationAvg.toStringAsFixed(1)} / 100',
                   ),
                   _buildTableRow(
                     'متوسط تقييم المراجعة',
-                    profile.stats.monthlyReviewAvg.toStringAsFixed(1) + ' / 5',
+                    '${profile.stats.monthlyReviewAvg.toStringAsFixed(1)} / 100',
                   ),
                   _buildTableRow(
                     'أيام الحضور',
@@ -518,7 +532,16 @@ class StudentProfileView extends StatelessWidget {
                 ],
               ),
               pw.SizedBox(height: 20),
-              pw.Header(level: 1, text: '3. الواجب الحالي'),
+              pw.Container(
+                alignment: pw.Alignment.centerRight,
+                margin: const pw.EdgeInsets.symmetric(vertical: 8),
+                child: pw.Text(
+                  '3. الواجب الحالي',
+                  textDirection: pw.TextDirection.rtl,
+                  style: pw.TextStyle(font: boldFont, fontSize: 18),
+                ),
+              ),
+
               pw.Table(
                 border: pw.TableBorder.all(),
                 children: [
@@ -537,7 +560,16 @@ class StudentProfileView extends StatelessWidget {
                 ],
               ),
               pw.SizedBox(height: 20),
-              pw.Header(level: 1, text: '4. سجل الحضور'),
+              pw.Container(
+                alignment: pw.Alignment.centerRight,
+                margin: const pw.EdgeInsets.symmetric(vertical: 8),
+                child: pw.Text(
+                  '4. سجل الحضور',
+                  textDirection: pw.TextDirection.rtl,
+                  style: pw.TextStyle(font: boldFont, fontSize: 18),
+                ),
+              ),
+
               if (profile.trackings.isEmpty)
                 pw.Text(
                   'لا توجد سجلات حضور لهذا الشهر.',
@@ -553,7 +585,7 @@ class StudentProfileView extends StatelessWidget {
                           'EEEE, yyyy-MM-dd',
                           'ar',
                         ).format(DateTime.parse(record.date)),
-                        (record.attendance == true) ? 'حاضر' : 'غائب',
+                        (record.attendance == 1) ? 'حاضر' : 'غائب',
                       ),
                   ],
                 ),
