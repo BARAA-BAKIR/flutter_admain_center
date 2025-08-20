@@ -137,61 +137,81 @@ class _HalaqasTabState extends State<HalaqasTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SearchAndFilterBar(
-          onSearchChanged: _onSearchChanged, hintText: 'ابحث عن حلقة بالاسم او اسم الجامع او الاستاذ...',
-        ),
-        Expanded(
-          child: BlocBuilder<HalaqasBloc, HalaqasState>(
-            builder: (context, state) {
-              switch (state.status) {
-                case HalaqasStatus.failure:
-                  return Center(child: Text('فشل تحميل البيانات: ${state.errorMessage}'));
-                
-                case HalaqasStatus.success:
-                  if (state.halaqas.isEmpty) {
-                    return const Center(child: Text('لا يوجد حلقات لعرضها.'));
-                  }
-                  return ListView.builder(
-                    controller: _scrollController,
-                    itemCount: state.hasReachedMax ? state.halaqas.length : state.halaqas.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index >= state.halaqas.length) {
-                        return const Center(child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ));
-                      }
-                      final halaqa = state.halaqas[index];
-                      return ListItemTile(
-                        title: halaqa.name,
-                        subtitle: 'المسجد: ${halaqa.mosqueName ?? 'غير محدد'} - الأستاذ: ${halaqa.teacherName ?? 'غير محدد'}',
-                        onMoreTap: () => _showHalaqaOptions(context, halaqa.id, halaqa.name),
-                       onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => BlocProvider(
-                              create: (ctx) => HalaqaDetailsBloc(
-                                repository: context.read<CenterManagerRepository>(),
-                              )..add(FetchHalaqaDetails(halaqa.id)),
-                              child: const HalaqaDetailsScreen(),
+    return RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<HalaqasBloc>().add(const FetchHalaqas());
+                    },
+      child: Column(
+        children: [
+          SearchAndFilterBar(
+            onSearchChanged: _onSearchChanged, hintText: 'ابحث عن حلقة بالاسم او اسم الجامع او الاستاذ...',
+          ),
+          Expanded(
+            child: BlocBuilder<HalaqasBloc, HalaqasState>(
+              builder: (context, state) {
+                switch (state.status) {
+                  case HalaqasStatus.failure:
+                    return Column(
+                      children: [
+                        Center(child: Text('فشل تحميل البيانات: ${state.errorMessage}')),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => context.read<HalaqasBloc>().add(const FetchHalaqas()),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade700,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
                             ),
                           ),
+                          child: const Text('تحديث'),
+                        ),
+                      ],
+                    );
+                  
+                  case HalaqasStatus.success:
+                    if (state.halaqas.isEmpty) {
+                      return const Center(child: Text('لا يوجد حلقات لعرضها.'));
+                    }
+                    return ListView.builder(
+                      controller: _scrollController,
+                      itemCount: state.hasReachedMax ? state.halaqas.length : state.halaqas.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index >= state.halaqas.length) {
+                          return const Center(child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ));
+                        }
+                        final halaqa = state.halaqas[index];
+                        return ListItemTile(
+                          title: halaqa.name,
+                          subtitle: 'المسجد: ${halaqa.mosqueName ?? 'غير محدد'} - الأستاذ: ${halaqa.teacherName ?? 'غير محدد'}',
+                          onMoreTap: () => _showHalaqaOptions(context, halaqa.id, halaqa.name),
+                         onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => BlocProvider(
+                                create: (ctx) => HalaqaDetailsBloc(
+                                  repository: context.read<CenterManagerRepository>(),
+                                )..add(FetchHalaqaDetails(halaqa.id)),
+                                child: const HalaqaDetailsScreen(),
+                              ),
+                            ),
+                          );
+                        },
                         );
                       },
-                      );
-                    },
-                  );
-
-                case HalaqasStatus.loading:
-                case HalaqasStatus.initial:
-                  return const Center(child: CircularProgressIndicator());
-              }
-            },
+                    );
+      
+                  case HalaqasStatus.loading:
+                  case HalaqasStatus.initial:
+                    return const Center(child: CircularProgressIndicator());
+                }
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

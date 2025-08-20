@@ -9,7 +9,11 @@ abstract class Failure extends Equatable {
 }
 
 class ServerFailure extends Failure {
-  const ServerFailure({required super.message});
+    final int? statusCode; // <-- تأكد من وجود هذه الخاصية
+
+  const ServerFailure({required String message, this.statusCode}) : super(message: message);
+
+  
 }
 
 class CacheFailure extends Failure {

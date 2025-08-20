@@ -7,6 +7,7 @@ import 'package:flutter_admain_center/data/models/center_maneger/add_halaqa_mode
 import 'package:flutter_admain_center/data/models/center_maneger/add_teacher_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/dashboard_summary_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/halaqa_name_model.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/mosque_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/mosque_selection_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/student_details_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/teacher_diatls_model.dart';
@@ -245,15 +246,6 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     return await datasource.deleteHalaqa(token: token, halaqaId: halaqaId);
   }
 
-  // @override
-  // Future<Either<Failure, List<TeacherSelectionModel>>>
-  // getTeachersForSelection() async {
-  //   final token = await _getToken();
-  //   if (token == null)
-  //     return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
-  //   return await datasource.getTeachersForSelection(token: token);
-  // }
-
   @override
   Future<Either<Failure, List<Map<String, dynamic>>>> getAttendanceReportData({
     required DateTime startDate,
@@ -433,10 +425,14 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
     return await datasource.deleteTeacher(token: token, teacherId: teacherId);
   }
+
   @override
-  Future<Either<Failure, Teacher>> addTeacher(AddTeacherModel teacherData) async {
+  Future<Either<Failure, Teacher>> addTeacher(
+    AddTeacherModel teacherData,
+  ) async {
     final token = await _getToken();
-    if (token == null) return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    if (token == null)
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
 
     // 1. استدعاء مصدر البيانات الذي يرجع Map<String, dynamic>
     final result = await datasource.addTeacher(teacherData, token);
@@ -521,11 +517,90 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     });
   }
 
-  // @override
-  // Future<Either<Failure, Map<String, dynamic>>> addTeacher(AddTeacherModel teacherData) async {
-  //   final token = await _getToken();
-  //   if (token == null) return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+  @override
+  Future<Either<Failure, List<Map<String, dynamic>>>>
+  getStudentsReportData() async {
+    final token = await _getToken();
+    if (token == null) {
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
+    // استدعاء الدالة الجديدة من الـ datasource وتمرير النتيجة مباشرة
+    return await datasource.getStudentsReport(token: token);
+  }
 
-  //   return await datasource.addTeacher(token: token, teacherData: teacherData);
-  // }
+  @override
+  Future<Either<Failure, List<Map<String, dynamic>>>>
+  getTeachersReportData() async {
+    final token = await _getToken();
+    if (token == null) {
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
+    // استدعاء الدالة الجديدة من الـ datasource وتمرير النتيجة مباشرة
+    return await datasource.getTeachersReport(token: token);
+  }
+  // ... (داخل CenterManegerRepositoryImpl)
+
+  @override
+  Future<Either<Failure, List<Map<String, dynamic>>>>
+  getHalaqasForFilter() async {
+    final token = await _getToken();
+    if (token == null) {
+      return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
+    return await datasource.getHalaqasForFilter(token: token);
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> getMosques({
+    required int page,
+    String? searchQuery,
+  }) async {
+    final token = await _getToken();
+    return await datasource.getMosques(
+      token: token!,
+      page: page,
+      searchQuery: searchQuery,
+    );
+  }
+
+  @override
+  Future<Either<Failure, Mosque>> createMosque(
+    Map<String, dynamic> mosqueData,
+  ) async {
+    final token = await _getToken();
+    final result = await datasource.createMosque(
+      token: token!,
+      mosqueData: mosqueData,
+    );
+    return result.fold(
+      (failure) => Left(failure),
+      (data) => Right(Mosque.fromJson(data['mosque'])),
+    );
+  }
+
+  @override
+  Future<Either<Failure, String>> deleteMosque(int mosqueId) async {
+    final token = await _getToken();
+    final result = await datasource.deleteMosque(
+      token: token!,
+      mosqueId: mosqueId,
+    );
+    return result.fold(
+      (failure) => Left(failure),
+      (data) => Right(data['message']),
+    );
+  }
+  @override
+  Future<Either<Failure, Mosque>> updateMosque(int mosqueId, Map<String, dynamic> mosqueData) async {
+    final token = await _getToken();
+    final result = await datasource.updateMosque(
+      token: token!,
+      mosqueId: mosqueId,
+      mosqueData: mosqueData,
+    );
+    return result.fold(
+      (failure) => Left(failure),
+      (data) => Right(Mosque.fromJson(data['mosque'])),
+    );
+  }
 }

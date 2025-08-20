@@ -14,8 +14,23 @@ class TeachersBloc extends Bloc<TeachersEvent, TeachersState> {
     on<FetchMoreTeachers>(_onFetchMoreTeachers);
      on<DeleteTeacher>(_onDeleteTeacher);
       on<AddNewTeacherToList>(_onAddNewTeacherToList);
+       on<UpdateTeacherInList>(_onUpdateTeacherInList);
   }
+void _onUpdateTeacherInList(UpdateTeacherInList event, Emitter<TeachersState> emit) {
+    // 1. أنشئ نسخة من القائمة الحالية
+    final currentState = state;
+    final List<Teacher> updatedList = List.from(currentState.teachers);
 
+    // 2. ابحث عن index الأستاذ الذي تم تعديله
+    final index = updatedList.indexWhere((teacher) => teacher.id == event.updatedTeacher.id);
+
+    // 3. إذا تم العثور عليه، استبدله بالبيانات الجديدة
+    if (index != -1) {
+      updatedList[index] = event.updatedTeacher;
+      // 4. أرسل الحالة الجديدة مع القائمة المحدثة
+      emit(currentState.copyWith(teachers: updatedList));
+    }
+  }
   Future<void> _onFetchTeachers(FetchTeachers event, Emitter<TeachersState> emit) async {
     emit(state.copyWith(status: TeachersStatus.loading));
     final result = await centerManagerRepository.getTeachers(page: 1, searchQuery: event.searchQuery);

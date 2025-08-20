@@ -2,6 +2,7 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:flutter_admain_center/core/error/failures.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/profile_details_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/center_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/registration_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/user_model.dart';
@@ -38,4 +39,12 @@ Future<Either<Failure, void>> resetPassword({
   });
   Future<Either<Failure, void>> updateNotificationStatus(bool status);
   Future<String?> getUserData();
+  // ... (داخل AuthRepository)
+Future<Either<Failure, void>> updateFcmToken(String fcmToken);
+ Future<Either<Failure, ProfileDetailsModel>> getProfileDetails();
+  Future<Either<Failure, bool>> verifyPassword(String password);
+  Future<Either<Failure, ProfileDetailsModel>> updateProfileforcenteradmin(Map<String, String> data);
 }
+
+
+

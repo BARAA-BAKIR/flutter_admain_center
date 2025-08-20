@@ -256,10 +256,12 @@ class _CenterAddStudentScreenState extends State<CenterAddStudentScreen> {
       appBar: AppBar(
         title: Text(
           'إضافة طالب جديد',
-          style: GoogleFonts.tajawal(),
+          style: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
           selectionColor: AppColors.light_sky_blue,
         ),
         backgroundColor: AppColors.steel_blue,
+        foregroundColor: Colors.white,
+        centerTitle: true,
       ),
       // استخدام BlocListener للاستجابة للحالات (النجاح، الفشل) بدون إعادة بناء الواجهة
       body: BlocListener<CenterAddStudentBloc, CenterAddStudentState>(

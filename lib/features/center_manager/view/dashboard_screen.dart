@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_admain_center/core/widgets/info_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,17 +12,16 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
         title: Text(
           'مركزي',
           style: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
         ),
-        backgroundColor: AppColors.light_sky_blue,
+        centerTitle: true,
+        backgroundColor: AppColors.white,
         elevation: 0,
-        actions: [
-        ],
+        actions: [],
       ),
       // BlocBuilder يعيد بناء الواجهة بناءً على كل تغيير في الحالة
       body: BlocBuilder<DashboardBloc, DashboardState>(

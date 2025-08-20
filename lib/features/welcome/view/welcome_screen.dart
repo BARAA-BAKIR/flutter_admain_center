@@ -47,7 +47,7 @@ class WelcomeScreen extends StatelessWidget {
                 Align(
                   alignment: Alignment.center,
                   child: Hero(
-                    tag: "logo",
+                    tag: "logo_info",
                     child: Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,

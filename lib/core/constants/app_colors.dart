@@ -18,4 +18,6 @@ class AppColors {
   static const Color light_sky_blue = Color(
     0xFFE0F5FF,
   ); // الأزرق السماوي الفاتح
+  static const Color white = Colors.white; // الابيض 
+
 }

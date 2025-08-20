@@ -1,127 +1,130 @@
-import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:excel/excel.dart';
+// ✅ تأكد من استيراد الخدمة الصحيحة
+import 'package:flutter_admain_center/core/services/excel_exporter_service.dart'; 
 import 'package:flutter_admain_center/domain/repositories/center_maneger_repository.dart';
-import 'package:path_provider/path_provider.dart';
-//import 'package:share_plus/share_plus.dart';
-import 'package:open_filex/open_filex.dart';
+
 part 'reports_event.dart';
 part 'reports_state.dart';
 
 class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
-  final CenterManagerRepository centerManagerRepository;
+  final CenterManagerRepository _repository;
+  final ExcelExporterService _excelExporter;
 
-  ReportsBloc({required this.centerManagerRepository}) : super(const ReportsState()) {
-    on<GenerateStudentsReport>(_onGenerateStudentsReport);
+  ReportsBloc({required CenterManagerRepository centerManagerRepository})
+      : _repository = centerManagerRepository,
+        _excelExporter = ExcelExporterService(),
+        super(const ReportsState()) {
+    on<GenerateStudentsListReport>(_onGenerateStudentsListReport);
+    on<GenerateTeachersListReport>(_onGenerateTeachersListReport);
     on<GenerateAttendanceReport>(_onGenerateAttendanceReport);
   }
 
-  Future<void> _onGenerateStudentsReport(GenerateStudentsReport event, Emitter<ReportsState> emit) async {
-    emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري جلب البيانات...'));
-    
-    final result = await centerManagerRepository.getAllStudentsForReport();
-
+  // معالج تقرير الطلاب
+  Future<void> _onGenerateStudentsListReport(
+    GenerateStudentsListReport event, Emitter<ReportsState> emit
+  ) async {
+    emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري جلب بيانات الطلاب...'));
+    final result = await _repository.getStudentsReportData();
     await result.fold(
       (failure) async => emit(state.copyWith(status: ReportGenerationStatus.failure, message: failure.message)),
-      (studentsData) async {
-        emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري إنشاء ملف Excel...'));
+      (data) async {
+        if (data.isEmpty) {
+          emit(state.copyWith(status: ReportGenerationStatus.failure, message: 'لا يوجد طلاب لعرضهم في التقرير.'));
+          return;
+        }
         try {
-          // 1. إنشاء ملف Excel
-          var excel = Excel.createExcel();
-          Sheet sheet = excel['بيانات الطلاب'];
+          emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري إنشاء ملف Excel...'));
+          
+          // ==================== هنا هو التعديل المطلوب ====================
+          // تمرير العناوين والمفاتيح الصحيحة بناءً على الـ API
+          await _excelExporter.exportAndShare(
+            data: data,
+            fileName: 'تقرير_بيانات_الطلاب',
+            sheetName: 'الطلاب',
+            // العناوين التي ستظهر في ملف Excel
+            headers: ['الاسم الكامل', 'اسم الأب', 'رقم الهاتف', 'الحلقة', 'المرحلة', 'تاريخ الميلاد', 'الحالة'],
+            // المفاتيح التي يجب البحث عنها في البيانات القادمة من الـ API
+            keys:    ['الاسم الكامل', 'اسم الأب', 'رقم الهاتف', 'الحلقة', 'المرحلة', 'تاريخ الميلاد', 'الحالة'],
+          );
+          // ===============================================================
 
-          // 2. إضافة العناوين
-          final headers = ['ID', 'الاسم الكامل', 'الحلقة', 'البريد الإلكتروني', 'رقم الهاتف', 'تاريخ الميلاد'];
-          sheet.appendRow(headers.map((header) => TextCellValue(header)).toList());
-
-          // 3. إضافة بيانات الطلاب
-          for (final student in studentsData) {
-            sheet.appendRow([
-              TextCellValue(student['id'].toString()),
-              TextCellValue(student['full_name'].toString()),
-              TextCellValue(student['halaqa_name'].toString()),
-              TextCellValue(student['email'].toString()),
-              TextCellValue(student['phone_number'].toString()),
-              TextCellValue(student['birth_date'].toString()),
-            ]);
-          }
-
-          // 4. حفظ ومشاركة الملف
-          final directory = await getTemporaryDirectory();
-          final filePath = '${directory.path}/students_report_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-          final fileBytes = excel.save();
-
-          if (fileBytes != null) {
-            File(filePath)
-              ..createSync(recursive: true)
-              ..writeAsBytesSync(fileBytes);
-            await OpenFilex.open(filePath);
-            // await Share.shareXFiles([XFile(filePath)], text: 'تقرير بيانات الطلاب');
-            emit(state.copyWith(status: ReportGenerationStatus.success, message: 'تم إنشاء ومشاركة التقرير بنجاح.'));
-          } else {
-            throw Exception('فشل حفظ ملف Excel.');
-          }
+          emit(state.copyWith(status: ReportGenerationStatus.success, message: 'تم تصدير التقرير بنجاح!'));
         } catch (e) {
-          emit(state.copyWith(status: ReportGenerationStatus.failure, message: 'حدث خطأ أثناء إنشاء الملف: ${e.toString()}'));
+          emit(state.copyWith(status: ReportGenerationStatus.failure, message: 'فشل إنشاء الملف: ${e.toString()}'));
         }
       },
     );
   }
 
-   Future<void> _onGenerateAttendanceReport(GenerateAttendanceReport event, Emitter<ReportsState> emit) async {
-    emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري جلب بيانات الحضور...'));
+  // معالج تقرير الأساتذة
+  Future<void> _onGenerateTeachersListReport(
+    GenerateTeachersListReport event, Emitter<ReportsState> emit
+  ) async {
+    emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري جلب بيانات الأساتذة...'));
+    final result = await _repository.getTeachersReportData();
+    await result.fold(
+      (failure) async => emit(state.copyWith(status: ReportGenerationStatus.failure, message: failure.message)),
+      (data) async {
+        if (data.isEmpty) {
+          emit(state.copyWith(status: ReportGenerationStatus.failure, message: 'لا توجد بيانات لعرضها في التقرير.'));
+          return;
+        }
+        try {
+          emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري إنشاء ملف Excel...'));
 
-    final result = await centerManagerRepository.getAttendanceReportData(
+          // ==================== هنا هو التعديل المطلوب ====================
+          await _excelExporter.exportAndShare(
+            data: data,
+            fileName: 'تقرير_بيانات_الأساتذة',
+            sheetName: 'الأساتذة',
+            headers: ['الاسم الكامل', 'رقم الهاتف', 'البريد الإلكتروني', 'المستوى التعليمي', 'الأجزاء المحفوظة', 'تاريخ بدء العمل', 'الحالة'],
+            keys:    ['الاسم الكامل', 'رقم الهاتف', 'البريد الإلكتروني', 'المستوى التعليمي', 'الأجزاء المحفوظة', 'تاريخ بدء العمل', 'الحالة'],
+          );
+          // ===============================================================
+
+          emit(state.copyWith(status: ReportGenerationStatus.success, message: 'تم تصدير التقرير بنجاح!'));
+        } catch (e) {
+          emit(state.copyWith(status: ReportGenerationStatus.failure, message: 'فشل إنشاء الملف: ${e.toString()}'));
+        }
+      },
+    );
+  }
+
+  // معالج تقرير الحضور
+  Future<void> _onGenerateAttendanceReport(
+    GenerateAttendanceReport event, Emitter<ReportsState> emit
+  ) async {
+    emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري جلب بيانات الحضور...'));
+    final result = await _repository.getAttendanceReportData(
       startDate: event.startDate,
       endDate: event.endDate,
       halaqaId: event.halaqaId,
     );
-
     await result.fold(
       (failure) async => emit(state.copyWith(status: ReportGenerationStatus.failure, message: failure.message)),
-      (reportData) async {
-        if (reportData.isEmpty) {
-          emit(state.copyWith(status: ReportGenerationStatus.success, message: 'لا توجد سجلات حضور في الفترة المحددة.'));
+      (data) async {
+        if (data.isEmpty) {
+          emit(state.copyWith(status: ReportGenerationStatus.failure, message: 'لا توجد بيانات حضور في الفترة المحددة.'));
           return;
         }
-
-        emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري إنشاء ملف Excel...'));
         try {
-          var excel = Excel.createExcel();
-          Sheet sheet = excel['تقرير الحضور'];
+          emit(state.copyWith(status: ReportGenerationStatus.loading, message: 'جاري إنشاء ملف Excel...'));
+          
+          // ==================== هنا هو التعديل المطلوب ====================
+          await _excelExporter.exportAndShare(
+            data: data,
+            fileName: 'تقرير_الحضور_والغياب',
+            sheetName: 'الحضور',
+            // افترضت أن API الحضور يرجع مفاتيح انجليزية، إذا كانت عربية قم بتغييرها
+            headers: ['الاسم الأول', 'الكنية', 'اسم الحلقة', 'التاريخ', 'الحالة'],
+            keys:    ['first_name', 'last_name', 'halaqa_name', 'date', 'status'],
+          );
+          // ===============================================================
 
-          // إضافة العناوين
-          final headers = ['اسم الطالب', 'اسم الحلقة', 'التاريخ', 'الحالة'];
-          sheet.appendRow(headers.map((header) => TextCellValue(header)).toList());
-
-          // إضافة بيانات الحضور
-          for (final record in reportData) {
-            sheet.appendRow([
-              TextCellValue((record['first_name'] ?? '') + ' ' + (record['last_name'] ?? '')),
-              TextCellValue(record['halaqa_name']?.toString() ?? 'N/A'),
-              TextCellValue(record['date']?.toString() ?? 'N/A'),
-              TextCellValue(record['status'] == 'present' ? 'حاضر' : 'غائب'),
-            ]);
-          }
-
-          // حفظ ومشاركة الملف
-          final directory = await getTemporaryDirectory();
-          final filePath = '${directory.path}/attendance_report_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-          final fileBytes = excel.save();
-
-          if (fileBytes != null) {
-            File(filePath)
-              ..createSync(recursive: true)
-              ..writeAsBytesSync(fileBytes);
- await OpenFilex.open(filePath);
-            // await Share.shareXFiles([XFile(filePath)], text: 'تقرير الحضور والغياب');
-            emit(state.copyWith(status: ReportGenerationStatus.success, message: 'تم إنشاء ومشاركة التقرير بنجاح.'));
-          } else {
-            throw Exception('فشل حفظ ملف Excel.');
-          }
+          emit(state.copyWith(status: ReportGenerationStatus.success, message: 'تم تصدير التقرير بنجاح!'));
         } catch (e) {
-          emit(state.copyWith(status: ReportGenerationStatus.failure, message: 'حدث خطأ أثناء إنشاء الملف: ${e.toString()}'));
+          emit(state.copyWith(status: ReportGenerationStatus.failure, message: 'فشل إنشاء الملف: ${e.toString()}'));
         }
       },
     );

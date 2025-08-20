@@ -7,6 +7,7 @@ import 'package:dartz/dartz.dart'; // استيراد مكتبة dartz
 import 'package:flutter_admain_center/core/error/failures.dart'; // استيراد كلاسات الأخطاء
 import 'package:flutter_admain_center/data/datasources/auth_api_datasource.dart';
 import 'package:flutter_admain_center/data/datasources/teacher_local_datasource.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/profile_details_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/center_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/registration_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/user_model.dart';
@@ -56,7 +57,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
     return result.fold((failure) => Left(failure), (data) async {
       try {
-        final user = UserModel.fromJson(data, data['token']);
+        final user = UserModel.fromJson(data);
 
         // تخزين بيانات المستخدم الكاملة
         final userJson = jsonEncode({
@@ -67,7 +68,7 @@ class AuthRepositoryImpl implements AuthRepository {
           'roles': user.roles,
         });
         await storage.write(key: 'user_data', value: userJson);
-      log('user ${user}');
+        log('user ${user}');
         return Right(user);
       } catch (e) {
         return Left(
@@ -218,4 +219,74 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<String?> getUserData() async {
     return await storage.read(key: 'user_data');
   }
+  // ... (داخل AuthRepositoryImpl)
+
+  Future<String?> _getToken() async {
+    final userDataJson = await storage.read(key: 'user_data');
+    if (userDataJson == null) return null;
+    return jsonDecode(userDataJson)['token'];
+  }
+
+  @override
+  Future<Either<Failure, void>> updateFcmToken(String fcmToken) async {
+    final userToken =
+        await _getToken(); // استخدم دالتك الخاصة لجلب توكن المصادقة
+    if (userToken == null) {
+      return const Left(CacheFailure(message: 'User not logged in'));
+    }
+    return await datasource.updateFcmToken(
+      token: fcmToken,
+      userToken: userToken,
+    );
+  }
+   @override
+  Future<Either<Failure, ProfileDetailsModel>> getProfileDetails() async {
+    final token = await _getToken();
+    if (token == null) return const Left(CacheFailure(message: 'User not logged in'));
+
+    final result = await datasource.getProfileDetails(token: token);
+    return result.fold(
+      (failure) => Left(failure),
+      (data) {
+        try {
+          return Right(ProfileDetailsModel.fromJson(data));
+        } catch (e) {
+          return Left(ParsingFailure(message: 'Failed to parse profile details: ${e.toString()}'));
+        }
+      },
+    );
+  }
+
+  // ✅ تنفيذ دالة التحقق من كلمة المرور
+  @override
+  Future<Either<Failure, bool>> verifyPassword(String password) async {
+    final token = await _getToken();
+    if (token == null) return const Left(CacheFailure(message: 'User not logged in'));
+
+    final result = await datasource.verifyPassword(token: token, password: password);
+    return result.fold(
+      (failure) => Left(failure),
+      (_) => const Right(true), // إذا نجح الطلب، فالكلمة صحيحة
+    );
+  }
+
+  // ✅ تنفيذ دالة تحديث الملف الشخصي
+  @override
+  Future<Either<Failure, ProfileDetailsModel>> updateProfileforcenteradmin(Map<String, String> data) async {
+    final token = await _getToken();
+    if (token == null) return const Left(CacheFailure(message: 'User not logged in'));
+
+    final result = await datasource.updateProfileforcenteradmin(token: token, data: data);
+    return result.fold(
+      (failure) => Left(failure),
+      (updatedData) {
+        try {
+          return Right(ProfileDetailsModel.fromJson(updatedData));
+        } catch (e) {
+          return Left(ParsingFailure(message: 'Failed to parse updated profile: ${e.toString()}'));
+        }
+      },
+    );
+  }
 }
+

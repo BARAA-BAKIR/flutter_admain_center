@@ -1,42 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_admain_center/domain/repositories/super_admin_repository.dart';
+import 'package:flutter_admain_center/features/super_admin/bloc/teacher_management_bloc/teacher_management_bloc.dart';
+import 'package:flutter_admain_center/features/super_admin/view/tabs/all_students_tab.dart';
+import 'package:flutter_admain_center/features/super_admin/view/tabs/all_teachers_tab.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_admain_center/core/constants/app_colors.dart';
-
-// استيراد الأقسام الفرعية التي سننشئها
-import 'tabs/all_teachers_tab.dart';
-import 'tabs/all_students_tab.dart';
 
 class AllStaffScreen extends StatelessWidget {
   const AllStaffScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: Colors.grey.shade100,
-        appBar: AppBar(
-          title: Text('الكادر العام', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.grey.shade100,
-          elevation: 0,
-          bottom: TabBar(
-            labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16),
-            unselectedLabelStyle: GoogleFonts.tajawal(fontSize: 16),
-            labelColor: AppColors.steel_blue,
-            unselectedLabelColor: Colors.grey.shade600,
-            indicatorColor: AppColors.steel_blue,
-            indicatorWeight: 3,
-            tabs: const [
-              Tab(text: 'جميع الطلاب'),
-              Tab(text: 'جميع الأساتذة'),
-            ],
+    // توفير البلوكات اللازمة لهذه الشاشة وأبنائها
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => TeacherManagementBloc(
+            repository: context.read<SuperAdminRepository>(),
           ),
         ),
-        body: const TabBarView(
-          children: [
-            AllStudentsTab(),
-            AllTeachersTab(),
-          ],
+        // يمكنك إضافة بلوك الطلاب هنا لاحقاً
+        // BlocProvider(create: (context) => AllStudentsBloc(...)),
+      ],
+      child: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text('الكادر العام', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+            bottom: const TabBar(
+              tabs: [
+                Tab(icon: Icon(Icons.school_outlined), text: 'الأساتذة'),
+                Tab(icon: Icon(Icons.groups_outlined), text: 'الطلاب'),
+              ],
+            ),
+          ),
+          body: const TabBarView(
+            children: [
+              AllTeachersTab(), // واجهة إدارة الأساتذة
+              AllStudentsTabWrapper(), // واجهة إدارة الطلاب
+            ],
+          ),
         ),
       ),
     );

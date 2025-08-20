@@ -285,66 +285,88 @@ class _StudentsScreenState extends State<StudentsScreen> {
         backgroundColor: Colors.grey.shade100,
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          // 2. تفعيل شريط البحث والفلترة بالكامل
-          SearchAndFilterBar(
-            onSearchChanged: _onSearchChanged,
-            hintText: 'ابحث عن طالب بالاسم ...',
-          ),
-          // 3. ربط القائمة بالبلوك لعرض البيانات الحية
-          Expanded(
-            child: BlocBuilder<StudentsBloc, StudentsState>(
-              builder: (context, state) {
-                switch (state.status) {
-                  case StudentsStatus.failure:
-                    return Center(
-                      child: Text('فشل تحميل البيانات: ${state.errorMessage}'),
-                    );
-
-                  case StudentsStatus.success:
-                    if (state.students.isEmpty) {
-                      return const Center(
-                        child: Text('لا يوجد طلاب يطابقون هذا البحث.'),
-                      );
-                    }
-                    // استخدام ListView.builder لعرض البيانات الحقيقية
-                    return ListView.builder(
-                      controller: _scrollController,
-                      itemCount:
-                          state.hasReachedMax
-                              ? state.students.length
-                              : state.students.length + 1,
-                      itemBuilder: (context, index) {
-                        // عرض مؤشر التحميل في نهاية القائمة إذا لم نصل للنهاية
-                        if (index >= state.students.length) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        }
-                        // عرض بيانات الطالب الحقيقية
-                        final student = state.students[index];
-                        return ListItemTile(
-                          title: student.fullName,
-                          subtitle: student.halaqaName ?? 'بلا حلقة',
-                          onMoreTap:
-                              () => _showStudentOptions(context, student),
-                        );
+      body:  RefreshIndicator(
+                      onRefresh: () async {
+                        // عند السحب، أرسل حدث جلب البيانات من جديد
+                        context.read<StudentsBloc>().add(const FetchStudents());
                       },
-                    );
-
-                  // عرض مؤشر التحميل أثناء جلب البيانات الأولية
-                  case StudentsStatus.loading:
-                  case StudentsStatus.initial:
-                    return const Center(child: CircularProgressIndicator());
-                }
-              },
+        child: Column(
+          children: [
+            // 2. تفعيل شريط البحث والفلترة بالكامل
+            SearchAndFilterBar(
+              onSearchChanged: _onSearchChanged,
+              hintText: 'ابحث عن طالب بالاسم ...',
             ),
-          ),
-        ],
+            // 3. ربط القائمة بالبلوك لعرض البيانات الحية
+            Expanded(
+              child: BlocBuilder<StudentsBloc, StudentsState>(
+                builder: (context, state) {
+                  switch (state.status) {
+                    case StudentsStatus.failure:
+                      return Column(
+                        children: [
+                          Center(
+                            child: Text('فشل تحميل البيانات: ${state.errorMessage}'),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () =>
+                                context.read<StudentsBloc>().add(const FetchStudents()),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade700,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                            child: const Text('تحديث'),
+                          ),
+                        ],
+                      );
+        
+                    case StudentsStatus.success:
+                      if (state.students.isEmpty) {
+                        return const Center(
+                          child: Text('لا يوجد طلاب يطابقون هذا البحث.'),
+                        );
+                      }
+                      // استخدام ListView.builder لعرض البيانات الحقيقية
+                      return ListView.builder(
+                        controller: _scrollController,
+                        itemCount:
+                            state.hasReachedMax
+                                ? state.students.length
+                                : state.students.length + 1,
+                        itemBuilder: (context, index) {
+                          // عرض مؤشر التحميل في نهاية القائمة إذا لم نصل للنهاية
+                          if (index >= state.students.length) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
+                          // عرض بيانات الطالب الحقيقية
+                          final student = state.students[index];
+                          return ListItemTile(
+                            title: student.fullName,
+                            subtitle: student.halaqaName ?? 'بلا حلقة',
+                            onMoreTap:
+                                () => _showStudentOptions(context, student),
+                          );
+                        },
+                      );
+        
+                    // عرض مؤشر التحميل أثناء جلب البيانات الأولية
+                    case StudentsStatus.loading:
+                    case StudentsStatus.initial:
+                      return const Center(child: CircularProgressIndicator());
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
       ),
       // زر الإضافة يبقى كما هو للمستقبل
       floatingActionButton: FloatingActionButton.extended(

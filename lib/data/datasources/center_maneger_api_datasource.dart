@@ -15,8 +15,8 @@ import 'package:flutter_admain_center/data/models/teacher/level_model.dart';
 
 class CenterManegerApiDatasource {
   final Dio _dio;
-  static final String _baseUrl =AppRoutes.url;
- CenterManegerApiDatasource()
+  static final String _baseUrl = AppRoutes.url;
+  CenterManegerApiDatasource()
     : _dio = Dio(
         BaseOptions(
           baseUrl: _baseUrl,
@@ -173,7 +173,6 @@ class CenterManegerApiDatasource {
             'search': searchQuery,
         },
       );
-
       return response.data;
     });
   }
@@ -289,7 +288,6 @@ class CenterManegerApiDatasource {
       return response.data;
     });
   }
-
 
   // Future<Either<Failure, Map<String, dynamic>>> addHalaqa({
   //   required String token,
@@ -450,32 +448,53 @@ class CenterManegerApiDatasource {
     });
   }
 
-  Future<Either<Failure, Map<String, dynamic>>> addTeacher(AddTeacherModel data, String token) async {
-  return await safeApiCall(() async {
-    final response = await _dio.post('/center/teacher/add', data: data.toJson(),
-    options: Options(headers: {'Authorization': 'Bearer $token'}));
-     print("✅ [DATASOURCE] Success! Status: ${response.statusCode}, Response: ${response.data}");
-     
-    return response.data;
-  });
-}
+  Future<Either<Failure, Map<String, dynamic>>> addTeacher(
+    AddTeacherModel data,
+    String token,
+  ) async {
+    return await safeApiCall(() async {
+      final response = await _dio.post(
+        '/center/teacher/add',
+        data: data.toJson(),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      print(
+        "✅ [DATASOURCE] Success! Status: ${response.statusCode}, Response: ${response.data}",
+      );
 
-Future<Either<Failure, Map<String, dynamic>>> getTeacherDetails(int teacherId, String token) async {
-  return await safeApiCall(() async {
-    final response = await _dio.get('/center/teachers/$teacherId', 
-    options: Options(headers: {'Authorization': 'Bearer $token'}));
-    return response.data;
-  });
-}
-Future<Either<Failure, Map<String, dynamic>>> updateTeacherDetails(int teacherId, Map<String, dynamic> data, String token) async {
-  return await safeApiCall(() async {
-    final response = await _dio.put('/center/teacher/update/$teacherId', data: data, 
-     options: Options(headers: {'Authorization': 'Bearer $token'}));
-    return response.data;
-  });
-}
+      return response.data;
+    });
+  }
 
- Future<Either<Failure, Map<String, dynamic>>> getHalaqaDetails({
+  Future<Either<Failure, Map<String, dynamic>>> getTeacherDetails(
+    int teacherId,
+    String token,
+  ) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/center/teachers/$teacherId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+
+  Future<Either<Failure, Map<String, dynamic>>> updateTeacherDetails(
+    int teacherId,
+    Map<String, dynamic> data,
+    String token,
+  ) async {
+    return await safeApiCall(() async {
+      final response = await _dio.put(
+        '/center/teacher/update/$teacherId',
+        data: data,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+
+  Future<Either<Failure, Map<String, dynamic>>> getHalaqaDetails({
     required String token,
     required int halaqaId,
   }) async {
@@ -485,6 +504,110 @@ Future<Either<Failure, Map<String, dynamic>>> updateTeacherDetails(int teacherId
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data['data']; // افترض أن البيانات تأتي داخل مفتاح 'data'
+    });
+  }
+
+  // دالة لجلب تقرير الطلاب
+  Future<Either<Failure, List<Map<String, dynamic>>>> getStudentsReport({
+    required String token,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/reports/students', // تأكد من أن المسار يبدأ بـ '/'
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      // بما أن الـ API يرجع قائمة، نقوم بتحويلها مباشرة
+      return List<Map<String, dynamic>>.from(response.data);
+    });
+  }
+
+  // دالة لجلب تقرير الأساتذة
+  Future<Either<Failure, List<Map<String, dynamic>>>> getTeachersReport({
+    required String token,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/reports/teachers', // تأكد من أن المسار يبدأ بـ '/'
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      // بما أن الـ API يرجع قائمة، نقوم بتحويلها مباشرة
+      return List<Map<String, dynamic>>.from(response.data);
+    });
+  }
+  // ... (داخل CenterManegerApiDatasource)
+
+  Future<Either<Failure, List<Map<String, dynamic>>>> getHalaqasForFilter({
+    required String token,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/filters/halaqas',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return List<Map<String, dynamic>>.from(response.data);
+    });
+  }
+
+  /// ✅ جلب قائمة المساجد مع ترقيم الصفحات والبحث
+  Future<Either<Failure, Map<String, dynamic>>> getMosques({
+    required String token,
+    required int page,
+    String? searchQuery,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/center/mosques',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        queryParameters: {
+          'page': page,
+          if (searchQuery != null && searchQuery.isNotEmpty)
+            'search': searchQuery,
+        },
+      );
+      return response.data;
+    });
+  }
+
+  /// ✅ إنشاء مسجد جديد
+  Future<Either<Failure, Map<String, dynamic>>> createMosque({
+    required String token,
+    required Map<String, dynamic> mosqueData,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.post(
+        '/center/mosques/create',
+        data: mosqueData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+
+  /// ✅ حذف مسجد
+  Future<Either<Failure, Map<String, dynamic>>> deleteMosque({
+    required String token,
+    required int mosqueId,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.delete(
+        '/center/mosques/$mosqueId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+    Future<Either<Failure, Map<String, dynamic>>> updateMosque({
+    required String token,
+    required int mosqueId,
+    required Map<String, dynamic> mosqueData,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.put(
+        '/center/mosques/$mosqueId', // استخدام PUT للتحديث
+        data: mosqueData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
     });
   }
 }

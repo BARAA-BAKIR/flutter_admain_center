@@ -1,38 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_admain_center/core/widgets/list_item_tile.dart';
-import 'package:flutter_admain_center/core/widgets/search_and_filter_bar.dart';
+import 'package:flutter_admain_center/features/super_admin/view/approved_teachers_list.dart';
+import 'package:flutter_admain_center/features/super_admin/view/pending_teachers_list.dart';
 
-class AllTeachersTab extends StatefulWidget {
+class AllTeachersTab extends StatelessWidget {
   const AllTeachersTab({super.key});
 
   @override
-  State<AllTeachersTab> createState() => _AllTeachersTabState();
-}
-
-class _AllTeachersTabState extends State<AllTeachersTab> {
-  
-  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SearchAndFilterBar(
-         
-          onSearchChanged: (query) { /* TODO: Implement search logic */ }, hintText: '',
-        ),
-        Expanded(
-          // TODO: Replace with BlocBuilder for real data
-          child: ListView.builder(
-            itemCount: 50, // مثال
-            itemBuilder: (context, index) {
-              return ListItemTile(
-                title: 'الأستاذ ${index + 1} من النظام',
-                subtitle: 'مركز الجنوب - حلقة الأنصار',
-                onMoreTap: () { /* TODO: Show limited options for Super Admin */ },
-              );
-            },
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          TabBar(
+            tabs: [
+              Tab(text: 'الأساتذة الموافق عليهم'),
+              Tab(text: 'طلبات التسجيل'),
+            ],
           ),
-        ),
-      ],
+          Expanded(
+            child: TabBarView(
+              children: [
+                ApprovedTeachersList(),
+                PendingTeachersList(),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

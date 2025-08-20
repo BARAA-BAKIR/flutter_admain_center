@@ -1,9 +1,10 @@
 // lib/features/teacher/bloc/halaqa_bloc.dart
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter_admain_center/core/error/failures.dart';
 import 'package:flutter_admain_center/features/teacher/bloc/dashboard/dashboard_bloc.dart';
 //import 'package:intl/intl.dart';
- // Import failures
+// Import failures
 //import 'package:flutter_admain_center/data/models/teacher/daily_follow_up_model.dart';
 //import 'package:flutter_admain_center/data/models/teacher/duty_model.dart';
 import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
@@ -15,53 +16,76 @@ part 'halaqa_state.dart';
 
 class HalaqaBloc extends Bloc<HalaqaEvent, HalaqaState> {
   final TeacherRepository _teacherRepository;
- final DashboardBloc _dashboardBloc;
-  HalaqaBloc({required TeacherRepository teacherRepository, required DashboardBloc dashboardBloc,})
-      : _teacherRepository = teacherRepository,
-        _dashboardBloc = dashboardBloc,
-        super(const HalaqaState()) {
+  final DashboardBloc _dashboardBloc;
+  HalaqaBloc({
+    required TeacherRepository teacherRepository,
+    required DashboardBloc dashboardBloc,
+  }) : _teacherRepository = teacherRepository,
+       _dashboardBloc = dashboardBloc,
+       super(const HalaqaState()) {
     on<FetchHalaqaData>(_onFetchHalaqaData);
     on<MarkStudentAttendance>(_onMarkStudentAttendance);
   }
 
-  Future<void> _onFetchHalaqaData(FetchHalaqaData event, Emitter<HalaqaState> emit) async {
-    emit(state.copyWith(isLoading: true, error: null));
+  Future<void> _onFetchHalaqaData(
+    FetchHalaqaData event,
+    Emitter<HalaqaState> emit,
+  ) async {
+    emit(state.copyWith(isLoading: true, error: null, noHalaqaAssigned: false));
 
     // Use fold() to handle the result from the repository
     final result = await _teacherRepository.getMyHalaqaWithLocalData();
     result.fold(
       // Failure case (Left)
       (failure) {
-        emit(state.copyWith(
-          isLoading: false,
-          error: failure.message,
-        ));
+        if (failure is ServerFailure) {
+          // 2. إذا كان كذلك، يمكنك الآن الوصول إلى statusCode بأمان
+          if (failure.statusCode == 404) {
+            // هذا يعني أن الأستاذ ليس لديه حلقة
+            emit(state.copyWith(isLoading: false, noHalaqaAssigned: true));
+          } else {
+            // أي خطأ آخر من الخادم
+            emit(state.copyWith(isLoading: false, error: failure.message));
+          }
+        } else {
+          // 3. إذا كان الفشل من نوع آخر (مثل CacheFailure)، تعامل معه هنا
+          emit(state.copyWith(isLoading: false, error: failure.message));
+        }
       },
       // Success case (Right)
       (halaqaData) {
-        emit(state.copyWith(
-          isLoading: false,
-          halaqa: halaqaData,
-          error: null,
-        ));
-          if (halaqaData.idhalaqa != 0) {
+        emit(
+          state.copyWith(
+            isLoading: false,
+            halaqa: halaqaData,
+            error: null,
+            noHalaqaAssigned: false,
+          ),
+        );
+        if (halaqaData.idhalaqa != 0) {
           _dashboardBloc.add(LoadDashboardData(halaqaId: halaqaData.idhalaqa));
         }
       },
     );
   }
 
-  Future<void> _onMarkStudentAttendance(MarkStudentAttendance event, Emitter<HalaqaState> emit) async {
-   if (state.halaqa == null) return;
+  Future<void> _onMarkStudentAttendance(
+    MarkStudentAttendance event,
+    Emitter<HalaqaState> emit,
+  ) async {
+    if (state.halaqa == null) return;
 
     // تحديث الواجهة فوراً (لتحسين تجربة المستخدم)
-    final updatedStudents = state.halaqa!.students.map((s) {
-      if (s.id == event.studentId) {
-        return s.copyWith(attendanceStatus: event.newStatus);
-      }
-      return s;
-    }).toList();
-    emit(state.copyWith(halaqa: state.halaqa!.copyWith(students: updatedStudents)));
+    final updatedStudents =
+        state.halaqa!.students.map((s) {
+          if (s.id == event.studentId) {
+            return s.copyWith(attendanceStatus: event.newStatus);
+          }
+          return s;
+        }).toList();
+    emit(
+      state.copyWith(halaqa: state.halaqa!.copyWith(students: updatedStudents)),
+    );
 
     // ====================  هنا هو الإصلاح ====================
     // استدعاء الدالة الجديدة في الـ Repository

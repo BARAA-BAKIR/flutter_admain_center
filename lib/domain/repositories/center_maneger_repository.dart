@@ -4,6 +4,7 @@ import 'package:flutter_admain_center/data/models/center_maneger/add_halaqa_mode
 import 'package:flutter_admain_center/data/models/center_maneger/add_teacher_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/dashboard_summary_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/halaqa_name_model.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/mosque_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/mosque_selection_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/student_details_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/teacher_diatls_model.dart';
@@ -68,6 +69,16 @@ abstract class CenterManagerRepository {
   Future<Either<Failure, TeacherDetailsModel>> getTeacherDetails(int teacherId);
   Future<Either<Failure, TeacherDetailsModel>> updateTeacherDetails(int teacherId, Map<String, dynamic> data);
 Future<Either<Failure, Halaqa>> getHalaqaDetails(int halaqaId);
-
+ Future<Either<Failure, List<Map<String, dynamic>>>> getStudentsReportData();
+Future<Either<Failure, List<Map<String, dynamic>>>> getTeachersReportData();
   // Future<Either<Failure, Map<String, dynamic>>> addTeacher(AddTeacherModel teacherData);
+Future<Either<Failure, List<Map<String, dynamic>>>> getHalaqasForFilter();
+// Future<Either<Failure, Mosque>> createMosque(Map<String, dynamic> mosqueData);
+
+  // --- دوال المساجد ---
+  Future<Either<Failure, Map<String, dynamic>>> getMosques({required int page, String? searchQuery});
+  Future<Either<Failure, Mosque>> createMosque(Map<String, dynamic> mosqueData);
+  Future<Either<Failure, String>> deleteMosque(int mosqueId);
+   Future<Either<Failure, Mosque>> updateMosque(int mosqueId, Map<String, dynamic> mosqueData);
+
 }

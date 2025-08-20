@@ -2,10 +2,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_admain_center/data/datasources/center_maneger_api_datasource.dart';
+import 'package:flutter_admain_center/data/datasources/notifications_api_datasource.dart';
+import 'package:flutter_admain_center/data/datasources/super_admin_api_datasource.dart';
 import 'package:flutter_admain_center/data/repositories/center_maneger_repository_impl.dart';
+import 'package:flutter_admain_center/data/repositories/notifications_repository_impl.dart';
+import 'package:flutter_admain_center/data/repositories/super_admin_repository_impl.dart';
 import 'package:flutter_admain_center/domain/repositories/center_maneger_repository.dart';
+import 'package:flutter_admain_center/domain/repositories/notifications_repository.dart';
+import 'package:flutter_admain_center/domain/repositories/super_admin_repository.dart';
 import 'package:flutter_admain_center/features/auth/view/role_router_screen.dart';
-import 'package:flutter_admain_center/features/teacher/view/notifications_screen.dart';
+import 'package:flutter_admain_center/features/center_manager/bloc/mosques_bloc/mosques_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -53,6 +59,7 @@ import 'package:flutter_admain_center/features/teacher/bloc/profile_teacher/prof
 import 'package:flutter_admain_center/features/teacher/bloc/settings/settings_bloc.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final NotificationService notificationService = NotificationService();
 
 /// دالة لمعالجة الإشعارات في الخلفية
 @pragma('vm:entry-point')
@@ -65,7 +72,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
   runApp(const MainApp());
 }
 
@@ -83,7 +89,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
-    _setupFirebaseMessaging();
+    // _setupFirebaseMessaging();
     _initAppLinks();
   }
 
@@ -94,43 +100,43 @@ class _MainAppState extends State<MainApp> {
   }
 
   /// إعداد إشعارات Firebase
-  void _setupFirebaseMessaging() async {
-    final messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission(alert: true, badge: true, sound: true);
+  // void _setupFirebaseMessaging() async {
+  //   final messaging = FirebaseMessaging.instance;
+  //   await messaging.requestPermission(alert: true, badge: true, sound: true);
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      if (message.notification != null) {
-        NotificationService.display(message);
-      }
-    });
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('A new onMessageOpenedApp event was published!');
-      _handleNotificationNavigation(message.data);
-    });
+  //   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+  //     if (message.notification != null) {
+  //       NotificationService.display(message);
+  //     }
+  //   });
+  //   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+  //     print('A new onMessageOpenedApp event was published!');
+  //     _handleNotificationNavigation(message.data);
+  //   });
 
-    // الحالة 3: المستخدم يضغط على الإشعار والتطبيق مغلق
-    // يتم استدعاء هذه الدالة عند فتح التطبيق من إشعار
-    messaging.getInitialMessage().then((RemoteMessage? message) {
-      if (message != null) {
-        print('App opened from a terminated state by a notification!');
-        _handleNotificationNavigation(message.data);
-      }
-    });
-  }
+  // الحالة 3: المستخدم يضغط على الإشعار والتطبيق مغلق
+  // يتم استدعاء هذه الدالة عند فتح التطبيق من إشعار
+  //   messaging.getInitialMessage().then((RemoteMessage? message) {
+  //     if (message != null) {
+  //       print('App opened from a terminated state by a notification!');
+  //       _handleNotificationNavigation(message.data);
+  //     }
+  //   });
+  // }
 
-  void _handleNotificationNavigation(Map<String, dynamic> data) {
-    // افترض أن الخادم يرسل 'screen' كجزء من بيانات الإشعار
-    final String? screen = data['screen'];
+  // void _handleNotificationNavigation(Map<String, dynamic> data) {
+  //   // افترض أن الخادم يرسل 'screen' كجزء من بيانات الإشعار
+  //   final String? screen = data['screen'];
 
-    if (screen == 'notifications') {
-      // استخدم الـ GlobalKey للانتقال إلى شاشة الإشعارات
-      navigatorKey.currentState?.push(
-        MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-      );
-    }
-    // يمكنك إضافة المزيد من الشروط هنا لأنواع أخرى من الإشعارات
-    // مثال: if (screen == 'halaqa_details') { ... }
-  }
+  //   if (screen == 'notifications') {
+  //     // استخدم الـ GlobalKey للانتقال إلى شاشة الإشعارات
+  //     navigatorKey.currentState?.push(
+  //       MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+  //     );
+  //   }
+  //   // يمكنك إضافة المزيد من الشروط هنا لأنواع أخرى من الإشعارات
+  //   // مثال: if (screen == 'halaqa_details') { ... }
+  // }
 
   /// تهيئة الروابط العميقة باستخدام app_links
   Future<void> _initAppLinks() async {
@@ -175,6 +181,9 @@ class _MainAppState extends State<MainApp> {
         Provider<FlutterSecureStorage>(
           create: (_) => const FlutterSecureStorage(),
         ),
+        RepositoryProvider<NotificationService>(
+          create: (_) => NotificationService(),
+        ),
         RepositoryProvider<AuthApiDatasource>(
           create: (_) => AuthApiDatasource(),
         ),
@@ -187,7 +196,16 @@ class _MainAppState extends State<MainApp> {
         RepositoryProvider<CenterManegerApiDatasource>(
           create: (_) => CenterManegerApiDatasource(),
         ),
-
+        RepositoryProvider<NotificationsApiDatasource>(
+          create: (_) => NotificationsApiDatasource(),
+        ),
+        RepositoryProvider<NotificationsRepository>(
+          create:
+              (context) => NotificationsRepositoryImpl(
+                datasource: context.read<NotificationsApiDatasource>(),
+                storage: context.read<FlutterSecureStorage>(),
+              ),
+        ),
         RepositoryProvider<AuthRepository>(
           create:
               (context) => AuthRepositoryImpl(
@@ -196,7 +214,16 @@ class _MainAppState extends State<MainApp> {
                 localDatasource: context.read<TeacherLocalDatasource>(),
               ),
         ),
-
+        RepositoryProvider<SuperAdminApiDatasource>(
+          create: (_) => SuperAdminApiDatasource(),
+        ),
+        RepositoryProvider<SuperAdminRepository>(
+          create:
+              (context) => SuperAdminRepositoryImpl(
+                datasource: context.read<SuperAdminApiDatasource>(),
+                storage: context.read<FlutterSecureStorage>(),
+              ),
+        ),
         RepositoryProvider<CenterManagerRepository>(
           create:
               (context) => CenterManegerRepositoryImpl(
@@ -233,9 +260,10 @@ class _MainAppState extends State<MainApp> {
         providers: [
           BlocProvider<AuthBloc>(
             create:
-                (context) =>
-                    AuthBloc(authRepository: context.read<AuthRepository>())
-                      ..add(AppStarted()),
+                (context) => AuthBloc(
+                  authRepository: context.read<AuthRepository>(),
+                  notificationService: context.read<NotificationService>(),
+                )..add(AppStarted()),
           ),
           BlocProvider<LoginBloc>(
             create:
@@ -270,6 +298,26 @@ class _MainAppState extends State<MainApp> {
                     SettingsBloc(authRepository: context.read<AuthRepository>())
                       ..add(LoadSettings()),
           ),
+          //  BlocProvider<HalaqasBloc>(
+          //   create: (context) => HalaqasBloc(
+          //     repository: context.read<CenterManagerRepository>(),
+          //   ),
+          // ),
+
+          // // بلوك لإدارة قائمة الأساتذة لمدير المركز
+          // BlocProvider<TeachersBloc>(
+          //   create: (context) => TeachersBloc(
+          //     repository: context.read<CenterManagerRepository>(),
+          //   ),
+          // ),
+
+          // بلوك لإدارة قائمة المساجد لمدير المركز
+          BlocProvider<MosquesBloc>(
+            create:
+                (context) => MosquesBloc(
+                  repository: context.read<CenterManagerRepository>(),
+                ),
+          ),
         ],
         child: MaterialApp(
           title: 'مركز الإدارة',
@@ -298,12 +346,12 @@ class _MainAppState extends State<MainApp> {
           home: BlocBuilder<AuthBloc, AuthState>(
             builder: (context, state) {
               if (state is AuthAuthenticated) {
-                //return const MainScreen();
                 return const RoleRouterScreen();
               }
               if (state is AuthUnauthenticated) {
                 return const LoginScreen();
               }
+              // في البداية (AuthInitial)، اعرض شاشة البداية أو التحميل
               return const WelcomeScreen();
             },
           ),

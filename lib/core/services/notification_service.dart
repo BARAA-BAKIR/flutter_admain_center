@@ -1,51 +1,61 @@
-// lib/core/services/notification_service.dart
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
 
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
-  static Future<void> initialize() async {
-    // إعدادات التهيئة للأندرويد
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher'); // استخدم أيقونة التطبيق
-
-    // إعدادات التهيئة للـ iOS
-    const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings();
-
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
-
-    await _flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  Future<void> initialize() async {
+    await _firebaseMessaging.requestPermission();
+    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings settings = InitializationSettings(android: androidSettings);
+    await _localNotifications.initialize(settings);
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    _handleForegroundNotifications();
   }
 
-  static void display(RemoteMessage message) async {
+  // ==================== هذه هي الدالة المفقودة ====================
+  Future<String?> getFcmToken() async {
     try {
-      final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
-      const NotificationDetails notificationDetails = NotificationDetails(
-        android: AndroidNotificationDetails(
-          "quran_center_channel", // معرف القناة
-          "Quran Center Channel", // اسم القناة
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-      );
-
-      await _flutterLocalNotificationsPlugin.show(
-        id,
-        message.notification!.title,
-        message.notification!.body,
-        notificationDetails,
-        payload: message.data.toString(), // يمكنك تمرير البيانات هنا
-      );
-    } on Exception catch (e) {
-      print(e);
+      return await _firebaseMessaging.getToken();
+    } catch (e) {
+      print("Error getting FCM token: $e");
+      return null;
     }
   }
+  // =============================================================
+
+  void _handleForegroundNotifications() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        _showLocalNotification(message);
+      }
+    });
+  }
+
+  void _showLocalNotification(RemoteMessage message) {
+    final notification = message.notification;
+    if (notification == null) return;
+    _localNotifications.show(
+      notification.hashCode,
+      notification.title,
+      notification.body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'high_importance_channel',
+          'High Importance Notifications',
+          importance: Importance.max,
+          icon: '@mipmap/ic_launcher',
+        ),
+      ),
+      payload: message.data.toString(),
+    );
+  }
+
 }

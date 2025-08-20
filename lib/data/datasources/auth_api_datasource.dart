@@ -10,7 +10,7 @@ import 'package:dartz/dartz.dart';
 class AuthApiDatasource {
   final Dio _dio;
 
-  static final String _baseUrl =AppRoutes.url;
+  static final String _baseUrl = AppRoutes.url;
 
   AuthApiDatasource()
     : _dio = Dio(
@@ -25,7 +25,7 @@ class AuthApiDatasource {
         ),
       );
 
-   Future<Either<Failure, Map<String, dynamic>>> login({
+  Future<Either<Failure, Map<String, dynamic>>> login({
     required String email,
     required String password,
     String? fcmToken,
@@ -35,7 +35,7 @@ class AuthApiDatasource {
         '/login',
         data: {'email': email, 'password': password, 'fcm_token': fcmToken},
       );
-      
+
       if (response.data is Map<String, dynamic>) {
         return response.data;
       }
@@ -43,6 +43,7 @@ class AuthApiDatasource {
       throw Exception('Invalid data format from login response.');
     });
   }
+
   Future<Either<Failure, List<CenterModel>>> getCenters() async {
     return await safeApiCall(() async {
       final response = await _dio.get('/centers');
@@ -80,7 +81,6 @@ class AuthApiDatasource {
       final response = await _dio.post(
         '/student/auth/change-password',
         data: {
-         
           'password': currentPassword,
           'new_password': newPassword,
           'new_password_confirmation': confirmPassword,
@@ -143,13 +143,17 @@ class AuthApiDatasource {
       );
       return const Right(null); // نجح الأمر
     } on DioException catch (e) {
-      return Left(ServerFailure(message: e.response?.data['message'] ?? 'An error occurred'));
+      return Left(
+        ServerFailure(
+          message: e.response?.data['message'] ?? 'An error occurred',
+        ),
+      );
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));
     }
   }
 
- Future<Either<Failure, void>> logout({required String token}) async {
+  Future<Either<Failure, void>> logout({required String token}) async {
     return await safeApiCall(() async {
       await _dio.post(
         '/logout',
@@ -158,13 +162,15 @@ class AuthApiDatasource {
       return;
     });
   }
-Future<Either<Failure, void>> updateNotificationStatus({
+
+  Future<Either<Failure, void>> updateNotificationStatus({
     required bool status,
     required String token,
   }) async {
     return await safeApiCall(() async {
       // ignore: unused_local_variable
-      final response = await _dio.put( // استخدام _dio.put بدلاً من http.put
+      final response = await _dio.put(
+        // استخدام _dio.put بدلاً من http.put
         '/settings/notifications', // المسار الصحيح بدون baseUrl لأنه موجود في BaseOptions
         options: Options(headers: {'Authorization': 'Bearer $token'}),
         data: {'enabled': status}, // تمرير البيانات مباشرة كـ Map
@@ -172,4 +178,56 @@ Future<Either<Failure, void>> updateNotificationStatus({
       return; // لا نحتاج لإرجاع بيانات، فقط void
     });
   }
+
+  Future<Either<Failure, void>> updateFcmToken({
+    required String token,
+    required String userToken, // توكن المصادقة
+  }) async {
+    return await safeApiCall(() async {
+      await _dio.post(
+        '/auth/update-fcm-token',
+        data: {'fcm_token': token},
+        options: Options(headers: {'Authorization': 'Bearer $userToken'}),
+      );
+    });
+  }
+
+  
+  // ✅ دالة جلب تفاصيل الملف الشخصي
+  Future<Either<Failure, Map<String, dynamic>>> getProfileDetails({required String token}) async {
+    return await safeApiCall(() async {
+      final response = await _dio.get(
+        '/profile/details',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
+
+  // ✅ دالة التحقق من كلمة المرور
+  Future<Either<Failure, void>> verifyPassword({required String token, required String password}) async {
+    return await safeApiCall(() async {
+      await _dio.post(
+        '/profile/verify-password',
+        data: {'password': password},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    });
+  }
+
+  // ✅ دالة تحديث الملف الشخصي
+  Future<Either<Failure, Map<String, dynamic>>> updateProfileforcenteradmin({
+    required String token,
+    required Map<String, String> data,
+  }) async {
+    return await safeApiCall(() async {
+      final response = await _dio.put(
+        '/profile/update',
+        data: data,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.data;
+    });
+  }
 }
+

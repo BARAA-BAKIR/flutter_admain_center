@@ -1,7 +1,10 @@
+// في lib/features/teacher/view/main_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_admain_center/core/constants/app_colors.dart';
 import 'package:flutter_admain_center/core/widgets/view/add_student_screen.dart';
 import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
+import 'package:flutter_admain_center/features/auth/bloc/auth_bloc.dart'; // <-- استيراد AuthBloc
 import 'package:flutter_admain_center/features/teacher/bloc/add_student/add_student_bloc.dart';
 import 'package:flutter_admain_center/features/teacher/bloc/myhalaqa/halaqa_bloc.dart';
 import 'package:flutter_admain_center/features/teacher/view/dashboard_screen.dart';
@@ -19,9 +22,8 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 1; // البدء بشاشة "حلقتي"
+  int _selectedIndex = 1;
 
-  // قائمة الشاشات الفرعية
   static const List<Widget> _screens = [
     DashboardScreen(),
     HalaqaScreen(),
@@ -32,10 +34,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    // عند بناء هذه الشاشة لأول مرة، نرسل حدث جلب البيانات
-    // نستخدم addPostFrameCallback لضمان أن الـ context متاح
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // نتحقق إذا كانت البيانات لم تُحمّل بعد لتجنب الطلبات المتكررة
       if (context.read<HalaqaBloc>().state.halaqa == null) {
         context.read<HalaqaBloc>().add(FetchHalaqaData());
       }
@@ -48,62 +47,137 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // نستخدم BlocBuilder لمراقبة حالة HalaqaBloc
-    return BlocBuilder<HalaqaBloc, HalaqaState>(
-      builder: (context, state) {
-        // الحالة 1: التحميل الأولي والبيانات غير متاحة
-        if (state.isLoading && state.halaqa == null) {
-          return const Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('جاري تحميل بيانات الحلقة...'),
-                ],
-              ),
-            ),
-          );
-        }
+ // في lib/features/teacher/view/main_screen.dart
 
-        // الحالة 2: فشل التحميل الأولي
-        if (state.error != null && state.halaqa == null) {
-          return Scaffold(
-            body: Center(
+@override
+Widget build(BuildContext context) {
+  return BlocBuilder<HalaqaBloc, HalaqaState>(
+    builder: (context, state) {
+      // الحالة 1: التحميل الأولي
+      if (state.isLoading && state.halaqa == null) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
+
+      // ==================== هنا هو الإصلاح الكامل والنهائي ====================
+      // الحالة 2: فشل التحميل الأولي (لأي سبب كان)
+      if (state.error != null && state.halaqa == null) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('خطأ'),
+            automaticallyImplyLeading: false, // إخفاء سهم الرجوع
+          ),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('فشل تحميل البيانات: ${state.error}'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.read<HalaqaBloc>().add(FetchHalaqaData()),
-                    child: const Text('إعادة المحاولة'),
+                  Icon(Icons.error_outline, size: 80, color: Colors.red.shade400),
+                  const SizedBox(height: 24),
+                  Text(
+                    'فشل تحميل البيانات',
+                    style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    state.error!, // عرض رسالة الخطأ الفعلية
+                    style: GoogleFonts.tajawal(fontSize: 16, color: Colors.grey.shade700),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // زر إعادة المحاولة
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('إعادة المحاولة'),
+                        onPressed: () {
+                          context.read<HalaqaBloc>().add(FetchHalaqaData());
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      // زر تسجيل الخروج
+                      TextButton.icon(
+                        icon: const Icon(Icons.logout, color: Colors.red),
+                        label: const Text('تسجيل الخروج', style: TextStyle(color: Colors.red)),
+                        onPressed: () {
+                          context.read<AuthBloc>().add(LoggedOut());
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          );
-        }
-
-        // الحالة 3: تم تحميل البيانات بنجاح (أو فشل التحديث مع وجود بيانات قديمة)
-        // نعرض الواجهة الرئيسية الكاملة
-        return Scaffold(
-          body: IndexedStack(index: _selectedIndex, children: _screens),
-          floatingActionButton: _buildFloatingActionButton(context),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-          bottomNavigationBar: _buildBottomNavigationBar(),
+          ),
         );
-      },
-    );
-  }
+      }
+      // ====================================================================
 
+      // الحالة 3: الأستاذ ليس لديه حلقة (بعد نجاح الاتصال بالـ API)
+      if (state.noHalaqaAssigned) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('مرحباً بك'),
+            automaticallyImplyLeading: false,
+          ),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.info_outline, size: 80, color: Colors.blueGrey),
+                  const SizedBox(height: 24),
+                  Text(
+                    'لم يتم تعيين حلقة لك بعد',
+                    style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'يرجى مراجعة إدارة المركز لتسليمك إحدى الحلقات.',
+                    style: GoogleFonts.tajawal(fontSize: 16, color: Colors.grey.shade700),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.logout),
+                    label: const Text('تسجيل الخروج'),
+                    onPressed: () {
+                      context.read<AuthBloc>().add(LoggedOut());
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade400,
+                      foregroundColor: Colors.white,
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+
+      // الحالة 4: النجاح (يوجد حلقة)
+      return Scaffold(
+        body: IndexedStack(index: _selectedIndex, children: _screens),
+        floatingActionButton: _buildFloatingActionButton(context),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        bottomNavigationBar: _buildBottomNavigationBar(),
+      );
+    },
+  );
+}
+
+  // ====================================================================
+
+  // ... (باقي دوال الـ build تبقى كما هي)
   Widget _buildFloatingActionButton(BuildContext context) {
     return FloatingActionButton(
       onPressed: () async {
-        // نقرأ الحالة الحالية من البلوك مباشرة
         final halaqaId = context.read<HalaqaBloc>().state.halaqa?.idhalaqa;
         if (halaqaId != null) {
           final result = await Navigator.of(context).push<bool>(
@@ -116,7 +190,6 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
           );
-          // إذا عادت الشاشة بنتيجة true، قم بتحديث قائمة الطلاب
           if (result == true && mounted) {
             context.read<HalaqaBloc>().add(FetchHalaqaData());
           }

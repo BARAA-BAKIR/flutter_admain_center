@@ -8,7 +8,13 @@ abstract class AllStudentsEvent extends Equatable {
 
 class FetchAllStudents extends AllStudentsEvent {
   final String? searchQuery;
-  const FetchAllStudents({this.searchQuery});
+  final int? centerId;
+  final int? halaqaId;
+
+  const FetchAllStudents({this.searchQuery, this.centerId, this.halaqaId});
+
+  @override
+  List<Object?> get props => [searchQuery, centerId, halaqaId];
 }
 
 class FetchMoreAllStudents extends AllStudentsEvent {}
