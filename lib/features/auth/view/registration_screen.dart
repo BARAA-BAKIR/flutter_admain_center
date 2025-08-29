@@ -107,6 +107,17 @@ class _RegistrationViewState extends State<RegistrationView> {
             );
             // عند النجاح، AuthBloc سيتولى الانتقال للشاشة الرئيسية،
             // ولكن يمكننا إغلاق هذه الشاشة إذا فُتحت فوق شاشة أخرى.
+            // if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            // }
+          }
+          if(state.successMessage=='تم تسجيل الأستاذ بنجاح وفي انتظار موافقة الإدارة.')
+          {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.successMessage ?? 'تم إرسال الطلب بنجاح'), backgroundColor: Colors.green),
+            );
+            // عند النجاح، AuthBloc سيتولى الانتقال للشاشة الرئيسية،
+            // ولكن يمكننا إغلاق هذه الشاشة إذا فُتحت فوق شاشة أخرى.
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
             }

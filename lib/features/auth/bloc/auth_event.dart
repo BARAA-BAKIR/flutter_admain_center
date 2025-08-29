@@ -7,13 +7,14 @@ abstract class AuthEvent extends Equatable {
 }
 
 class AppStarted extends AuthEvent {}
-
-// الإصلاح: يستقبل كائن UserModel
 class LoggedIn extends AuthEvent {
   final UserModel user;
   const LoggedIn({required this.user});
-  @override
-  List<Object> get props => [user];
 }
 
-class LoggedOut extends AuthEvent {}
+// ❌ احذف هذا الحدث، لم نعد بحاجته هنا
+// class LoggedOut extends AuthEvent {}
+
+// ✅ --- أضف هذا الحدث الجديد والمحسن --- ✅
+// هذا الحدث سيتم إرساله من واجهة المستخدم لطلب الخروج
+class AuthLogoutRequested extends AuthEvent {}

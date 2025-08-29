@@ -3,6 +3,7 @@ import 'package:flutter_admain_center/core/error/failures.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/add_halaqa_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/add_teacher_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/dashboard_summary_model.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/halaqa_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/halaqa_name_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/mosque_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/mosque_selection_model.dart';
@@ -43,11 +44,6 @@ abstract class CenterManagerRepository {
   Future<Either<Failure, void>> deleteHalaqa(int halaqaId);
   Future<Either<Failure, List<TeacherSelectionModel>>>
   getTeachersForSelection();
-  Future<Either<Failure, List<Map<String, dynamic>>>> getAttendanceReportData({
-    required DateTime startDate,
-    required DateTime endDate,
-    int? halaqaId,
-  });
 
   // دالة جديدة لنقل الطالب
   Future<Either<Failure, Map<String, dynamic>>> transferStudent({
@@ -69,6 +65,11 @@ abstract class CenterManagerRepository {
   Future<Either<Failure, TeacherDetailsModel>> getTeacherDetails(int teacherId);
   Future<Either<Failure, TeacherDetailsModel>> updateTeacherDetails(int teacherId, Map<String, dynamic> data);
 Future<Either<Failure, Halaqa>> getHalaqaDetails(int halaqaId);
+  Future<Either<Failure, List<Map<String, dynamic>>>> getAttendanceReportData({
+    required DateTime startDate,
+    required DateTime endDate,
+    int? halaqaId,
+  });
  Future<Either<Failure, List<Map<String, dynamic>>>> getStudentsReportData();
 Future<Either<Failure, List<Map<String, dynamic>>>> getTeachersReportData();
   // Future<Either<Failure, Map<String, dynamic>>> addTeacher(AddTeacherModel teacherData);

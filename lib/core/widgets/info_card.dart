@@ -20,6 +20,7 @@ class InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 3,
+      // ignore: deprecated_member_use
       shadowColor: Colors.black.withOpacity(0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -30,6 +31,7 @@ class InfoCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 20,
+              // ignore: deprecated_member_use
               backgroundColor: color.withOpacity(0.1),
               child: Icon(icon, color: color),
             ),

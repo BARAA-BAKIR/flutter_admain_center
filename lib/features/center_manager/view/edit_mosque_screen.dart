@@ -90,7 +90,9 @@ class _EditMosqueFormState extends State<_EditMosqueForm> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('تعديل: ${widget.mosque.name}'),
+        title: Text('تعديل: ${widget.mosque.name}',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,

@@ -83,7 +83,7 @@ class _StaffScreenState extends State<StaffScreen> with SingleTickerProviderStat
           label: const Text('إضافة حلقة'),
           icon: const Icon(Icons.add_circle_outline),
           backgroundColor: AppColors.teal_blue,
-          heroTag: 'add_halaqa_tag',
+        
         );
       case 1: // تاب الأساتذة
         return FloatingActionButton.extended(
@@ -91,7 +91,7 @@ class _StaffScreenState extends State<StaffScreen> with SingleTickerProviderStat
           label: const Text('إضافة أستاذ'),
           icon: const Icon(Icons.person_add_alt_1),
           backgroundColor: AppColors.teal_blue,
-          heroTag: 'add_teacher_tag',
+        
         );
       case 2: // تاب المساجد
         // الزر العائم الخاص بإضافة مسجد موجود داخل MosquesTab نفسه
@@ -135,21 +135,7 @@ class _StaffScreenState extends State<StaffScreen> with SingleTickerProviderStat
       ),
       //  الآن الزر سيتغير بناءً على الـ Tab المحدد
       floatingActionButton:_buildFloatingActionButton(),
-      //  _tabController.index == 0
-      //     ? FloatingActionButton.extended(
-      //         onPressed: () => _navigateToAddHalaqa(context),
-      //         label: const Text('إضافة حلقة'),
-      //         icon: const Icon(Icons.add_circle_outline),
-      //         backgroundColor: AppColors.teal_blue,
-      //         heroTag: 'add_halaqa_tag', //  إضافة tag فريد
-      //       )
-      //     : FloatingActionButton.extended(
-      //         onPressed: () => _navigateToAddTeacher(context),
-      //         label: const Text('إضافة أستاذ'),
-      //         icon: const Icon(Icons.person_add_alt_1),
-      //         backgroundColor: AppColors.steel_blue,
-      //         heroTag: 'add_teacher_tag', //  إضافة tag فريد
-      //       ),
+     
     );
   }
 }

@@ -147,6 +147,8 @@
 // lib/data/datasources/teacher_local_datasource.dart
 // lib/data/datasources/teacher_local_datasource.dart
 
+import 'dart:developer';
+
 import 'package:flutter_admain_center/core/services/database_service.dart';
 import 'package:flutter_admain_center/data/models/teacher/daily_follow_up_model.dart';
 import 'package:flutter_admain_center/data/models/teacher/duty_model.dart';
@@ -248,6 +250,6 @@ class TeacherLocalDatasource {
     await _followUpStore.drop(db);
     await _dutyStore.drop(db);
     await _halaqaStore.drop(db);
-    print('🧹 تم مسح جميع البيانات المحلية بنجاح.');
+    log('🧹 تم مسح جميع البيانات المحلية بنجاح.');
   }
 }

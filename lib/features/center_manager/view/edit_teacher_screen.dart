@@ -76,7 +76,11 @@ class _EditTeacherScreenState extends State<EditTeacherScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('تعديل بيانات الأستاذ')),
+      appBar: AppBar(title: const Text('تعديل بيانات الأستاذ',
+          style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: AppColors.steel_blue,
+          foregroundColor: Colors.white,
+        ),
       body: BlocConsumer<EditTeacherBloc, EditTeacherState>(
         listener: (context, state) {
           if (state.status == EditTeacherStatus.success && _isInitialDataLoaded) {

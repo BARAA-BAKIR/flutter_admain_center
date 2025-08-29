@@ -14,7 +14,11 @@ class TeacherProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('الملف الشخصي: $teacherName'),
+        title: Text('الملف الشخصي: $teacherName',
+            style: GoogleFonts.tajawal(fontWeight: FontWeight.bold) 
+            ),
+        centerTitle: true,
+        foregroundColor: Colors.white,
         backgroundColor: AppColors.steel_blue,
       ),
       body: BlocBuilder<TeacherProfileBloc, TeacherProfileState>(

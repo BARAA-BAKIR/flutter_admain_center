@@ -1,26 +1,57 @@
-// هذا السطر يخبر Dart أن هذا الملف هو جزء من مكتبة profile_bloc
+// In lib/features/teacher/bloc/profile_teacher/profile_event.dart
+
 part of 'profile_bloc.dart';
 
-// اجعل الكلاس الأساسي تجريدياً
-abstract class ProfileEvent {}
+abstract class ProfileEvent extends Equatable {
+  const ProfileEvent();
+  @override
+  List<Object?> get props => [];
+}
 
-// هذا الحدث لا يحتاج أي متغيرات
 class FetchProfileData extends ProfileEvent {}
 
 class UpdateProfile extends ProfileEvent {
-  // اجعل الحقول اختيارية لأن المستخدم قد لا يغيرها كلها
-  final String? firstName;
-  final String? lastName;
-  final String? phone;
+  final String firstName;
+  final String lastName;
+  final String? fatherName;
+  final String? motherName;
+  final DateTime? birthDate;
+  final String? educationLevel;
+  final String gender;
+  final String phoneNumber;
   final String? address;
-  // كلمة المرور الحالية مطلوبة دائماً للتأكيد
   final String currentPassword;
+  final String? newPassword;
+  final String? newPasswordConfirmation;
 
-  UpdateProfile({
-    this.firstName,
-    this.lastName,
-    this.phone,
+  const UpdateProfile({
+    required this.firstName,
+    required this.lastName,
+    this.fatherName,
+    this.motherName,
+    this.birthDate,
+    this.educationLevel,
+    required this.gender,
+    required this.phoneNumber,
     this.address,
     required this.currentPassword,
+    this.newPassword,
+    this.newPasswordConfirmation,
   });
+
+  @override
+  List<Object?> get props => [
+        firstName,
+        lastName,
+        fatherName,
+        motherName,
+        birthDate,
+        educationLevel,
+        gender,
+        phoneNumber,
+        address,
+        currentPassword,
+        newPassword,
+        newPasswordConfirmation,
+      ];
 }

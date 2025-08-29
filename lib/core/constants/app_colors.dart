@@ -19,5 +19,10 @@ class AppColors {
     0xFFE0F5FF,
   ); // الأزرق السماوي الفاتح
   static const Color white = Colors.white; // الابيض 
-
+//رمادي
+  static const Color light_gray = Color(0xFFF5F5F5); // الرمادي الفاتح
+  static const Color gray = Color(0xFFBDBDBD); // الرمادي المتوسط
+  static const Color dark_gray = Color(0xFF616161); // الرمادي الداكن
+  static const Color black = Colors.black;
+  static const Color f_light_gray =Color(0xFFF5F5F5); // رمادي فاتح جدا
 }

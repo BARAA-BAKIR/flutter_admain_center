@@ -15,7 +15,7 @@ import 'package:intl/intl.dart';
 class AddStudentScreen extends StatefulWidget {
   final int halaqaId;
 
-  const AddStudentScreen({super.key, int halaqaId = 0}) : halaqaId = halaqaId;
+  const AddStudentScreen({super.key, this.halaqaId = 0});
 
   @override
   State<AddStudentScreen> createState() => _AddStudentScreenState();

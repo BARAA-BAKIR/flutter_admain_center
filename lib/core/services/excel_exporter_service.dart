@@ -183,6 +183,7 @@ class ExcelExporterService {
         ..createSync(recursive: true)
         ..writeAsBytesSync(fileBytes);
       final xfile = XFile(file.path);
+      // ignore: deprecated_member_use
       await Share.shareXFiles([xfile], text: 'تقرير $fileName');
     }
   }

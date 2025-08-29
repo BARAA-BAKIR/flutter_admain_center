@@ -64,7 +64,9 @@ class _TeachersTabState extends State<TeachersTab> {
         children: [
      ListTile(
             leading: const Icon(Icons.visibility_outlined),
-            title: const Text('عرض الملف الشخصي'),
+            title: const Text('عرض الملف الشخصي',
+            style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             onTap: () {
               Navigator.pop(ctx); // أغلق القائمة السفلية
               Navigator.of(context).push(

@@ -1,18 +1,17 @@
+// In lib/features/welcome/view_model/welcome_view_model.dart
+
 import 'package:flutter/material.dart';
 
 class WelcomeViewModel {
   static final image = Image.asset(
-    'assets/image.png',
-    width: 225,
-    height: 175,
+    'assets/image111.png',
+    width: 100,
+    height: 100,
     fit: BoxFit.cover,
   );
 
-  static const String welcomeMessage =
-      'مرحبًا بكم في تطبيق الجمعية الخيرية للقرآن الكريم';
-
-  static const String subMessage =
-      'تعلم القرآن الكريم وانشر الخير بين الناس، انضم إلينا وابدأ رحلتك مع كتاب الله';
-
-  static const String ayah = '﴿وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا﴾';
+  static const String welcomeMessage = 'مرحباً بك في بيئة الإيمان الرقمية';
+  static const String subMessage = 'انضم إلى مجتمعنا القرآني، حيث يلتقي العلم بالنور، وتتلى الآيات بقلوب خاشعة.';
+  static const String returningUserMessage = 'أهلاً بعودتك!'; // <-- رسالة جديدة
+  static const String ayah = '﴿ وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا ﴾';
 }

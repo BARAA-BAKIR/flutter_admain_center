@@ -1,58 +1,31 @@
+
 // import 'package:bloc/bloc.dart';
-// import 'package:equatable/equatable.dart';
+// import 'package:flutter_admain_center/data/models/teacher/notification_model.dart';
 // import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
 
 // part 'notification_event.dart';
 // part 'notification_state.dart';
 
-// class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
+// class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
 //   final TeacherRepository _teacherRepository;
-//   int _currentPage = 1;
 
-//   NotificationBloc({required TeacherRepository teacherRepository})
+//   NotificationsBloc({required TeacherRepository teacherRepository})
 //       : _teacherRepository = teacherRepository,
-//         super(const NotificationState()) {
+//         super(const NotificationsState()) {
 //     on<FetchNotifications>(_onFetchNotifications);
-//     on<MarkAsRead>(_onMarkAsRead);
 //   }
 
-//   Future<void> _onFetchNotifications(FetchNotifications event, Emitter<NotificationState> emit) async {
-//     if (state.hasReachedMax) return;
-
-//     emit(state.copyWith(status: NotificationStatus.loading));
-
-//     final result = await _teacherRepository.getNotifications(_currentPage);
-
+//   Future<void> _onFetchNotifications(FetchNotifications event, Emitter<NotificationsState> emit) async {
+//     emit(state.copyWith(status: NotificationsStatus.loading));
+//     final result = await _teacherRepository.getNotifications(1);
 //     result.fold(
-//       (failure) => emit(state.copyWith(status: NotificationStatus.failure, errorMessage: failure.message)),
-//       (data) {
-//         final List<dynamic> notificationsJson = data['data'];
-//         final newNotifications = notificationsJson.map((json) => AppNotification.fromJson(json)).toList();
-        
-//         emit(state.copyWith(
-//           status: NotificationStatus.success,
-//           notifications: List.of(state.notifications)..addAll(newNotifications),
-//           hasReachedMax: data['next_page_url'] == null,
-//         ));
-//         _currentPage++;
-//       },
+//       (failure) => emit(state.copyWith(status: NotificationsStatus.failure, errorMessage: failure.message)),
+//       (notifications) => emit(state.copyWith(status: NotificationsStatus.success, notifications: notifications as List<NotificationModel>)),
 //     );
 //   }
-
-//   Future<void> _onMarkAsRead(MarkAsRead event, Emitter<NotificationState> emit) async {
-//     // تحديث الواجهة فوراً لتجربة مستخدم أفضل
-//     final updatedList = state.notifications.map((n) {
-//       if (n.id == event.notificationId) {
-//         return AppNotification(id: n.id, title: n.title, body: n.body, createdAt: n.createdAt, isRead: true);
-//       }
-//       return n;
-//     }).toList();
-//     emit(state.copyWith(notifications: updatedList));
-
-//     // إرسال الطلب للخادم في الخلفية
-//     await _teacherRepository.markNotificationAsRead(event.notificationId);
-//   }
 // }
+// في lib/features/teacher/bloc/notifications/notification_bloc.dart
+
 import 'package:bloc/bloc.dart';
 import 'package:flutter_admain_center/data/models/teacher/notification_model.dart';
 import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
@@ -69,12 +42,48 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
     on<FetchNotifications>(_onFetchNotifications);
   }
 
-  Future<void> _onFetchNotifications(FetchNotifications event, Emitter<NotificationsState> emit) async {
+  Future<void> _onFetchNotifications(
+    FetchNotifications event,
+    Emitter<NotificationsState> emit,
+  ) async {
+    // يمكنك إضافة التعامل مع رقم الصفحة لاحقًا إذا أردت عمل pagination
+    if (state.status == NotificationsStatus.loading) return;
+
     emit(state.copyWith(status: NotificationsStatus.loading));
+
+    // استدعاء الـ repository (يمكنك تمرير رقم الصفحة هنا لاحقًا)
     final result = await _teacherRepository.getNotifications(1);
+
     result.fold(
-      (failure) => emit(state.copyWith(status: NotificationsStatus.failure, errorMessage: failure.message)),
-      (notifications) => emit(state.copyWith(status: NotificationsStatus.success, notifications: notifications as List<NotificationModel>)),
+      // حالة الفشل
+      (failure) => emit(state.copyWith(
+        status: NotificationsStatus.failure,
+        errorMessage: failure.message,
+      )),
+      // حالة النجاح
+      (data) {
+        // ====================  هنا هو الحل الكامل والنهائي ====================
+        try {
+          // 1. استخرج قائمة الإشعارات من الـ Map باستخدام المفتاح 'notifications'
+          final List<NotificationModel> notifications = data['notifications'];
+          
+          // 2. (اختياري) يمكنك استخراج بيانات الـ meta إذا احتجتها للـ pagination
+          // final Map<String, dynamic> meta = data['meta'];
+
+          // 3. قم بإصدار حالة النجاح مع القائمة الصحيحة
+          emit(state.copyWith(
+            status: NotificationsStatus.success,
+            notifications: notifications,
+          ));
+        } catch (e) {
+          // إذا حدث خطأ أثناء استخراج البيانات (مثلاً، المفتاح غير موجود)
+          emit(state.copyWith(
+            status: NotificationsStatus.failure,
+            errorMessage: 'خطأ في تحليل بيانات الإشعارات: ${e.toString()}',
+          ));
+        }
+        // =====================================================================
+      },
     );
   }
 }

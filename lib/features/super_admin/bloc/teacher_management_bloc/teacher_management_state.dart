@@ -1,6 +1,8 @@
 part of 'teacher_management_bloc.dart';
 
+enum FormStatus { initial, submitting, success, failure }
 enum TeacherManagementStatus { initial, loading, success, failure }
+enum TeacherActionStatus { initial, success, failure }
 
 class TeacherManagementState extends Equatable {
   // For approved teachers list
@@ -13,6 +15,15 @@ class TeacherManagementState extends Equatable {
   final TeacherManagementStatus pendingStatus;
   final List<PendingUser> pendingTeachers;
 
+  // For form handling (add/edit)
+  final FormStatus formStatus;
+  final String? formError;
+  final List<CenterFilterModel> centersList;
+  final bool isLoadingPrerequisites;
+
+  // For general actions (approve, reject, delete)
+  final TeacherActionStatus actionStatus;
+  final String? successMessage;
   final String? errorMessage;
 
   const TeacherManagementState({
@@ -22,6 +33,12 @@ class TeacherManagementState extends Equatable {
     this.currentPage = 1,
     this.pendingStatus = TeacherManagementStatus.initial,
     this.pendingTeachers = const [],
+    this.formStatus = FormStatus.initial,
+    this.formError,
+    this.centersList = const [],
+    this.isLoadingPrerequisites = false,
+    this.actionStatus = TeacherActionStatus.initial,
+    this.successMessage,
     this.errorMessage,
   });
 
@@ -32,7 +49,14 @@ class TeacherManagementState extends Equatable {
     int? currentPage,
     TeacherManagementStatus? pendingStatus,
     List<PendingUser>? pendingTeachers,
+    FormStatus? formStatus,
+    String? formError,
+    List<CenterFilterModel>? centersList,
+    bool? isLoadingPrerequisites,
+    TeacherActionStatus? actionStatus,
+    String? successMessage,
     String? errorMessage,
+    bool resetActionStatus = false, // Helper to reset status
   }) {
     return TeacherManagementState(
       approvedStatus: approvedStatus ?? this.approvedStatus,
@@ -41,10 +65,31 @@ class TeacherManagementState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       pendingStatus: pendingStatus ?? this.pendingStatus,
       pendingTeachers: pendingTeachers ?? this.pendingTeachers,
-      errorMessage: errorMessage,
+      formStatus: formStatus ?? this.formStatus,
+      formError: formError, // No ?? operator, allows setting to null
+      centersList: centersList ?? this.centersList,
+      isLoadingPrerequisites: isLoadingPrerequisites ?? this.isLoadingPrerequisites,
+      // ✅ إصلاح: إعادة تعيين الحالة والرسائل بشكل صحيح
+      actionStatus: resetActionStatus ? TeacherActionStatus.initial : (actionStatus ?? this.actionStatus),
+      successMessage: successMessage, // No ?? operator
+      errorMessage: errorMessage,     // No ?? operator
     );
   }
 
   @override
-  List<Object?> get props => [approvedStatus, approvedTeachers, hasReachedMax, currentPage, pendingStatus, pendingTeachers, errorMessage];
+  List<Object?> get props => [
+    approvedStatus,
+    approvedTeachers,
+    hasReachedMax,
+    currentPage,
+    pendingStatus,
+    pendingTeachers,
+    formStatus,
+    formError,
+    centersList,
+    isLoadingPrerequisites,
+    actionStatus,
+    successMessage,
+    errorMessage,
+  ];
 }

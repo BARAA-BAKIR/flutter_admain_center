@@ -1,10 +1,10 @@
 import 'package:equatable/equatable.dart';
 
-class Halaqa extends Equatable {
+class Halaqan extends Equatable {
   final int id;
   final String name;
-  const Halaqa({required this.id, required this.name});
-  factory Halaqa.fromJson(Map<String, dynamic> json) => Halaqa(id: json['id'], name: json['name']);
+  const Halaqan({required this.id, required this.name});
+  factory Halaqan.fromJson(Map<String, dynamic> json) => Halaqan(id: json['id'], name: json['name']);
   @override
   List<Object?> get props => [id, name];
 }
@@ -30,7 +30,7 @@ class StudentDetails extends Equatable {
   final String? educationaLevel;
   final String? healthStatus;
   final String? phone;
-  final Halaqa? halaqa;
+  final Halaqan? halaqan;
   final Level? level;
 
   const StudentDetails({
@@ -45,7 +45,7 @@ class StudentDetails extends Equatable {
     this.educationaLevel,
     this.healthStatus,
     this.phone,
-    this.halaqa,
+    this.halaqan,
     this.level,
   });
 
@@ -65,11 +65,11 @@ class StudentDetails extends Equatable {
       educationaLevel: json['educationa_level'],
       healthStatus: json['health_status'],
       phone: json['contact_number'],
-      halaqa: progress != null && progress['halaqa'] != null ? Halaqa.fromJson(progress['halaqa']) : null,
+      halaqan: progress != null && progress['halaqan'] != null ? Halaqan.fromJson(progress['halaqan']) : null,
       level: progress != null && progress['level'] != null ? Level.fromJson(progress['level']) : null,
     );
   }
 
   @override
-  List<Object?> get props => [id, firstName, lastName, fatherName, motherName, birthDate, gender, socialStatus, educationaLevel, healthStatus, phone, halaqa, level];
+  List<Object?> get props => [id, firstName, lastName, fatherName, motherName, birthDate, gender, socialStatus, educationaLevel, healthStatus, phone, halaqan, level];
 }

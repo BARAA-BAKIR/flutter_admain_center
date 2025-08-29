@@ -1,7 +1,8 @@
 // lib/features/teacher/bloc/halaqa_bloc.dart
 
 import 'package:bloc/bloc.dart';
-import 'package:flutter_admain_center/core/error/failures.dart';
+import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_admain_center/features/teacher/bloc/dashboard/dashboard_bloc.dart';
 //import 'package:intl/intl.dart';
 // Import failures
@@ -27,47 +28,52 @@ class HalaqaBloc extends Bloc<HalaqaEvent, HalaqaState> {
     on<MarkStudentAttendance>(_onMarkStudentAttendance);
   }
 
-  Future<void> _onFetchHalaqaData(
-    FetchHalaqaData event,
-    Emitter<HalaqaState> emit,
-  ) async {
-    emit(state.copyWith(isLoading: true, error: null, noHalaqaAssigned: false));
+  
+Future<void> _onFetchHalaqaData(
+  FetchHalaqaData event,
+  Emitter<HalaqaState> emit,
+) async {
+  // استخدم copyWith الجديد
+  emit(state.copyWith(
+    isLoading: true,
+    error: () => null, // <-- مرر دالة تُرجع null لمسح الخطأ
+    noHalaqaAssigned: false,
+  ));
 
-    // Use fold() to handle the result from the repository
-    final result = await _teacherRepository.getMyHalaqaWithLocalData();
-    result.fold(
-      // Failure case (Left)
-      (failure) {
-        if (failure is ServerFailure) {
-          // 2. إذا كان كذلك، يمكنك الآن الوصول إلى statusCode بأمان
-          if (failure.statusCode == 404) {
-            // هذا يعني أن الأستاذ ليس لديه حلقة
-            emit(state.copyWith(isLoading: false, noHalaqaAssigned: true));
-          } else {
-            // أي خطأ آخر من الخادم
-            emit(state.copyWith(isLoading: false, error: failure.message));
-          }
-        } else {
-          // 3. إذا كان الفشل من نوع آخر (مثل CacheFailure)، تعامل معه هنا
-          emit(state.copyWith(isLoading: false, error: failure.message));
+  final result = await _teacherRepository.getMyHalaqaWithLocalData();
+  
+  result.fold(
+    (failure) {
+      // لقد قمت بتبسيط منطق الفشل هنا ليتوافق مع التعديل الأخير في الـ Repository
+      emit(state.copyWith(
+        isLoading: false,
+        error: () => failure.message, // <-- مرر دالة تُرجع رسالة الخطأ
+      ));
+    },
+    (halaqaModel) {
+      // هذا هو المنطق الصحيح الذي ناقشناه سابقًا
+      if (halaqaModel == null) {
+        // لا توجد حلقة
+        emit(state.copyWith(
+          isLoading: false,
+          noHalaqaAssigned: true,
+          halaqa: () => null, // <-- مرر دالة تُرجع null لتعيين الحلقة إلى null
+        ));
+      } else {
+        // توجد حلقة
+        emit(state.copyWith(
+          isLoading: false,
+          halaqa: () => halaqaModel, // <-- مرر دالة تُرجع الحلقة
+          noHalaqaAssigned: false,
+        ));
+        // هذا الجزء يبقى كما هو
+        if (halaqaModel.idhalaqa != 0) {
+          _dashboardBloc.add(LoadDashboardData(halaqaId: halaqaModel.idhalaqa));
         }
-      },
-      // Success case (Right)
-      (halaqaData) {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            halaqa: halaqaData,
-            error: null,
-            noHalaqaAssigned: false,
-          ),
-        );
-        if (halaqaData.idhalaqa != 0) {
-          _dashboardBloc.add(LoadDashboardData(halaqaId: halaqaData.idhalaqa));
-        }
-      },
-    );
-  }
+      }
+    },
+  );
+}
 
   Future<void> _onMarkStudentAttendance(
     MarkStudentAttendance event,
@@ -84,7 +90,7 @@ class HalaqaBloc extends Bloc<HalaqaEvent, HalaqaState> {
           return s;
         }).toList();
     emit(
-      state.copyWith(halaqa: state.halaqa!.copyWith(students: updatedStudents)),
+      state.copyWith(halaqa: () => state.halaqa!.copyWith(students: updatedStudents)),
     );
 
     // ====================  هنا هو الإصلاح ====================

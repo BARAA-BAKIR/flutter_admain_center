@@ -61,7 +61,7 @@ class TopPerformingCentersList extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ✅ تغيير العنوان ليعكس المنطق الجديد
+          
             Text('المراكز الأكثر نشاطاً (حسب نسبة الحضور)', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             if (centers.isEmpty)
@@ -73,7 +73,7 @@ class TopPerformingCentersList extends StatelessWidget {
                 itemCount: centers.length,
                 itemBuilder: (context, index) {
                   final center = centers[index];
-                  // ✅ عرض نسبة الحضور بدلاً من عدد الطلاب
+                 
                   final attendance = center['attendance_percentage']?.toStringAsFixed(1) ?? '0.0';
                   return ListTile(
                     leading: CircleAvatar(child: Text('${index + 1}')),

@@ -112,7 +112,7 @@ class _EditStudentViewState extends State<EditStudentView> {
     setState(() {
       _gender = student.gender;
       _socialStatus = student.socialStatus;
-      _selectedHalaqaId = student.halaqa?.id;
+      _selectedHalaqaId = student.halaqan?.id;
       _selectedLevelId = student.level?.id;
     });
   }
@@ -153,8 +153,16 @@ class _EditStudentViewState extends State<EditStudentView> {
       appBar: AppBar(
         title: Text(
           'تعديل: ${widget.studentName}',
-          style: GoogleFonts.tajawal(),
+         
+          
+          style: GoogleFonts.tajawal(
+
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: AppColors.white,   
+          ),
         ),
+        centerTitle: true,
         backgroundColor: AppColors.steel_blue,
       ),
       body: MultiBlocListener(

@@ -61,6 +61,7 @@ Future<void> exportToExcel(BuildContext context, {
     }
 
   } catch (e) {
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('فشل التصدير: ${e.toString()}'), backgroundColor: Colors.red),
     );

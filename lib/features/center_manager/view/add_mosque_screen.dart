@@ -57,7 +57,9 @@ class _AddMosqueFormState extends State<_AddMosqueForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إضافة مسجد جديد'),
+        title: const Text('إضافة مسجد جديد',
+        style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,

@@ -1,14 +1,14 @@
-// هذا السطر يخبر Dart أن هذا الملف هو جزء من مكتبة profile_bloc
+// In lib/features/teacher/bloc/profile_teacher/profile_state.dart
+
 part of 'profile_bloc.dart';
 
-// هذا هو المكان الأفضل لتعريف حالات الـ enum
 enum ProfileStatus { initial, loading, success, failure }
 enum ProfileActionStatus { initial, loading, success, failure }
 
-class ProfileState {
+class ProfileState extends Equatable {
   final ProfileStatus status;
   final ProfileActionStatus actionStatus;
-  final TeacherProfile? profile; // استخدم موديل الأستاذ
+  final TeacherProfile? profile;
   final String? errorMessage;
 
   const ProfileState({
@@ -28,8 +28,10 @@ class ProfileState {
       status: status ?? this.status,
       actionStatus: actionStatus ?? this.actionStatus,
       profile: profile ?? this.profile,
-      // اسمح بإعادة تعيين رسالة الخطأ إلى null
-      errorMessage: errorMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
+
+  @override
+  List<Object?> get props => [status, actionStatus, profile, errorMessage];
 }

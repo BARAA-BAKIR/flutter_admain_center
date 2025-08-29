@@ -3,7 +3,7 @@ import 'package:flutter_admain_center/features/teacher/bloc/changed_password/cha
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ChangePasswordSheet extends StatefulWidget {
-  const ChangePasswordSheet({Key? key}) : super(key: key);
+  const ChangePasswordSheet({super.key});
 
   @override
   State<ChangePasswordSheet> createState() => _ChangePasswordSheetState();

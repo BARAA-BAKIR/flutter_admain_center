@@ -130,7 +130,9 @@ class SuperAdminDashboardView extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'اللوحة الرئيسية',
-          style: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
+          
+          style: GoogleFonts.tajawal(fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.grey.shade100,
         elevation: 0,
@@ -172,6 +174,7 @@ class SuperAdminDashboardView extends StatelessWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
+                   
                     InfoCard(
                       title: 'إجمالي المراكز',
                       value: state.globalStats['centers']?.toString() ?? '0',

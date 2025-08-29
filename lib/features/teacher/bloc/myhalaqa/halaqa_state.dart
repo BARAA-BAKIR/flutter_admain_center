@@ -1,38 +1,43 @@
+// في lib/features/teacher/bloc/myhalaqa/halaqa_state.dart
 part of 'halaqa_bloc.dart';
 
-// الحالة الآن ستحتوي على كائن الحلقة كاملاً
-
-class HalaqaState  {
-final bool noHalaqaAssigned;
+class HalaqaState extends Equatable {
+  final bool noHalaqaAssigned;
   final bool isLoading;
   final String? error;
-  final MyhalaqaModel? halaqa; // كائن الحلقة كاملاً
-  final bool isRefreshing; // حالة التحديث
+  final MyhalaqaModel? halaqa;
+  final bool isRefreshing;
+
   const HalaqaState({
     this.isLoading = false,
-    this.noHalaqaAssigned=false,
+    this.noHalaqaAssigned = false,
     this.error,
     this.halaqa,
-    this.isRefreshing = false, // حالة التحديث
+    this.isRefreshing = false,
   });
 
-  // دالة لنسخ الحالة وتحديثها بسهولة
+  // ====================  هنا هو الحل الكامل والنهائي ====================
   HalaqaState copyWith({
     bool? isLoading,
-    String? error,
-    MyhalaqaModel? halaqa,
-bool? noHalaqaAssigned,
-    bool? isRefreshing, // حالة التحديث
+    // استخدمنا كائنًا خاصًا للسماح بمسح الخطأ
+    ValueGetter<String?>? error, 
+    // استخدمنا كائنًا خاصًا للسماح بتعيين الحلقة إلى null
+    ValueGetter<MyhalaqaModel?>? halaqa, 
+    bool? noHalaqaAssigned,
+    bool? isRefreshing,
   }) {
     return HalaqaState(
       isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
-      halaqa: halaqa ?? this.halaqa,
-       noHalaqaAssigned: noHalaqaAssigned ?? this.noHalaqaAssigned, // <-- تحديث القيمة
-     
-      isRefreshing: isRefreshing ?? this.isRefreshing, // حالة التحديث
+      // إذا تم تمرير `error`، استخدم قيمته (حتى لو كانت null)، وإلا احتفظ بالقيمة القديمة
+      error: error != null ? error() : this.error,
+      // إذا تم تمرير `halaqa`، استخدم قيمته (حتى لو كانت null)، وإلا احتفظ بالقيمة القديمة
+      halaqa: halaqa != null ? halaqa() : this.halaqa,
+      noHalaqaAssigned: noHalaqaAssigned ?? this.noHalaqaAssigned,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
     );
   }
+  // =====================================================================
 
-  List<Object?> get props => [isLoading, error, halaqa , isRefreshing];
+  @override
+  List<Object?> get props => [halaqa, isLoading, error, noHalaqaAssigned, isRefreshing];
 }

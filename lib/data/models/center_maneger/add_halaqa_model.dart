@@ -1,4 +1,5 @@
 // lib/data/models/center_manager/add_halaqa_model.dart
+// ignore: depend_on_referenced_packages
 import 'package:equatable/equatable.dart';
 
 class AddHalaqaModel extends Equatable {

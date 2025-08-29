@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+import 'package:flutter_admain_center/core/constants/app_colors.dart';
 import 'package:flutter_admain_center/core/widgets/custom_text_field.dart';
 import 'package:flutter_admain_center/data/models/super_admin/center_model.dart';
 import 'package:flutter_admain_center/domain/repositories/super_admin_repository.dart';
@@ -15,8 +17,17 @@ class AddEditCenterScreen extends StatelessWidget {
       create: (context) => AddEditCenterBloc(
         repository: context.read<SuperAdminRepository>(),
         centerId: center?.id,
-      )..add(LoadCenterPrerequisites(centerToEdit: center)),
-      child: AddEditCenterView(isEditing: center != null),
+      )..add(LoadCenterPrerequisites(centerIdToEdit: center?.id)),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(center == null ? 'إضافة مركز جديد' : 'تعديل مركز: ${center!.name}'
+              , style: const TextStyle(fontWeight: FontWeight.bold)),
+          centerTitle: true,
+          backgroundColor: Colors.grey.shade100,
+          foregroundColor: Colors.black,
+        ),
+        body: AddEditCenterView(isEditing: center != null),
+      ),
     );
   }
 }
@@ -31,6 +42,7 @@ class AddEditCenterView extends StatefulWidget {
 
 class _AddEditCenterViewState extends State<AddEditCenterView> {
   final _formKey = GlobalKey<FormState>();
+  
   final _nameController = TextEditingController();
   final _regionController = TextEditingController();
   final _governorateController = TextEditingController();
@@ -71,72 +83,135 @@ class _AddEditCenterViewState extends State<AddEditCenterView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? 'تعديل المركز' : 'إضافة مركز جديد'),
-      ),
-      body: BlocConsumer<AddEditCenterBloc, AddEditCenterState>(
-        listener: (context, state) {
-          if (state.status == FormStatus.success) {
-            Navigator.of(context).pop(true);
-          }
-          if (state.status == FormStatus.failure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('فشل العملية: ${state.errorMessage}'), backgroundColor: Colors.red),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state.status == FormStatus.loaded && widget.isEditing && state.initialData != null && !_isPopulated) {
-            final data = state.initialData!;
-            _nameController.text = data.name;
-            _regionController.text = data.region ?? '';
-            _governorateController.text = data.governorate;
-            _cityController.text = data.city;
-            _addressController.text = data.address ?? '';
-            _selectedManagerId = data.id;
-            _isPopulated = true;
-          }
+    return BlocConsumer<AddEditCenterBloc, AddEditCenterState>(
+      listener: (context, state) {
+        if (state.status == FormStatus.success) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(
+              content: Text(widget.isEditing ? 'تم الحفظ بنجاح' : 'تمت الإضافة بنجاح'),
+              backgroundColor: Colors.green,
+            ));
+          Navigator.of(context).pop(true);
+        }
+        if (state.status == FormStatus.failure) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(
+              content: Text('فشل العملية: ${state.errorMessage ?? 'خطأ غير معروف'}'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ));
+        }
+      },
+      builder: (context, state) {
+        if (state.status == FormStatus.loaded && widget.isEditing && state.initialData != null && !_isPopulated) {
+          final data = state.initialData!;
+          _nameController.text = data.name;
+          _regionController.text = data.region ?? '';
+          _governorateController.text = data.governorate;
+          _cityController.text = data.city;
+          _addressController.text = data.address ?? '';
+          _selectedManagerId = data.managerId;
+          _isPopulated = true;
+        }
 
-          if (state.status == FormStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          return Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                CustomTextField(controller: _nameController, labelText: 'اسم المركز', icon: Icons.business, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<int>(
-                  value: _selectedManagerId,
-                  hint: const Text('اختر المدير المسؤول'),
-                  items: state.potentialManagers.map((manager) {
-                    return DropdownMenuItem<int>(value: manager['id'], child: Text(manager['name']));
-                  }).toList(),
-                  onChanged: (value) => setState(() => _selectedManagerId = value),
-                  validator: (value) => value == null ? 'يجب اختيار مدير' : null,
+        if (state.status == FormStatus.loading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return Column(
+          children: [
+            Expanded(
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.all(16.0),
+                  children: [
+                  
+                    CustomTextField(
+                      controller: _nameController,
+                      labelText: 'اسم المركز',
+                      icon: Icons.business,
+                      validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                    ),
+                    // ... (باقي الحقول كما هي)
+                    const SizedBox(height: 16),
+                    
+                    DropdownButtonFormField<int?>(
+                      
+                      value: _selectedManagerId,
+                      hint: const Text('اختر المدير المسؤول'),
+                      items: state.potentialManagers.map((manager) {
+                        return DropdownMenuItem<int>(
+                          value: manager['id'],
+                          child: Text(manager['name']),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedManagerId = value),
+                      validator: (value) {
+                        if (!widget.isEditing && value == null) {
+                          return 'يجب اختيار مدير';
+                        }
+                        return null;
+                      },
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person_search),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      controller: _governorateController,
+                      labelText: 'المحافظة',
+                      icon: Icons.location_city,
+                      validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      controller: _cityController,
+                      labelText: 'المدينة/القرية',
+                      icon: Icons.location_on,
+                      validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      controller: _regionController,
+                      labelText: 'المنطقة (اختياري)',
+                      icon: Icons.map,
+                      isRequired: false,
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      controller: _addressController,
+                      labelText: 'العنوان التفصيلي (اختياري)',
+                      icon: Icons.home,
+                      isRequired: false,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                CustomTextField(controller: _governorateController, labelText: 'المحافظة', icon: Icons.location_city, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
-                const SizedBox(height: 16),
-                CustomTextField(controller: _cityController, labelText: 'المدينة/القرية', icon: Icons.location_on, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
-                const SizedBox(height: 16),
-                CustomTextField(controller: _regionController, labelText: 'المنطقة', icon: Icons.map, isRequired: false),
-                const SizedBox(height: 16),
-                CustomTextField(controller: _addressController, labelText: 'العنوان التفصيلي', icon: Icons.home, isRequired: false),
-                const SizedBox(height: 32),
-                ElevatedButton(
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
                   onPressed: state.status == FormStatus.submitting ? null : () => _submitForm(context),
-                  child: state.status == FormStatus.submitting
+                  icon: const Icon(Icons.save_rounded),
+                  label: state.status == FormStatus.submitting
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(widget.isEditing ? 'حفظ التعديلات' : 'إضافة المركز'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: AppColors.light_blue,
+                    textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ],
+              ),
             ),
-          );
-        },
-      ),
+          ],
+        );
+      },
     );
   }
 }

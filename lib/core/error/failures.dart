@@ -1,3 +1,4 @@
+// ignore: depend_on_referenced_packages
 import 'package:equatable/equatable.dart';
 
 abstract class Failure extends Equatable {
@@ -11,7 +12,7 @@ abstract class Failure extends Equatable {
 class ServerFailure extends Failure {
     final int? statusCode; // <-- تأكد من وجود هذه الخاصية
 
-  const ServerFailure({required String message, this.statusCode}) : super(message: message);
+  const ServerFailure({required super.message, this.statusCode});
 
   
 }

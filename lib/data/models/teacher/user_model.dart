@@ -136,8 +136,21 @@ class UserModel extends Equatable {
     required this.roles,
   });
 
-  bool hasRole(String role) => roles.contains(role);
+  bool hasRole(String role) {
+    // 1. قم بتنظيف الدور المطلوب للتحقق منه (إزالة المسافات)
+    final cleanRoleToCompare = role.trim();
 
+    // 2. ابحث في قائمة أدوار المستخدم
+    for (final userRole in roles) {
+      // 3. قم بتنظيف كل دور من أدوار المستخدم وقارنه
+      if (userRole.trim() == cleanRoleToCompare) {
+        return true; // إذا تم العثور على تطابق، أرجع true
+      }
+    }
+    
+    // 4. إذا لم يتم العثور على أي تطابق بعد المرور على كل الأدوار
+    return false;
+  }
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final userData = json.containsKey('user') ? json['user'] as Map<String, dynamic> : json;
     final rolesData = userData['roles'] as List<dynamic>? ?? [];

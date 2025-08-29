@@ -4,9 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class CentersPerformanceChart extends StatelessWidget {
   final List<Map<String, dynamic>> chartData;
-
   const CentersPerformanceChart({super.key, required this.chartData});
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -48,8 +46,9 @@ class CentersPerformanceChart extends StatelessWidget {
                             // ✅ ---  التصحيح النهائي هنا ---
                             getTitlesWidget: (double value, TitleMeta meta) {
                               final index = value.toInt();
-                              if (index >= chartData.length)
+                              if (index >= chartData.length) {
                                 return const SizedBox.shrink();
+                              }
 
                               // الطريقة الصحيحة الآن هي تمرير 'meta' بالكامل
                               return SideTitleWidget(

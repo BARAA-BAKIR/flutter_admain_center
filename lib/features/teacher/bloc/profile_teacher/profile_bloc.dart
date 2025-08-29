@@ -2,8 +2,9 @@
 // احذف السطر التالي:
 // import 'package:flutter_admain_center/features/teacher/bloc/profile_student/profile_bloc.dart';
 
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter_admain_center/data/models/teacher/teacher_profile_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
 
 // استورد ملفات الـ event والـ state كـ "part"
@@ -41,34 +42,39 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     }
   }
 
-  Future<void> _onUpdateProfile(
-    UpdateProfile event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(actionStatus: ProfileActionStatus.loading));
-    try {
-      final result = await _teacherRepository.updateTeacherProfile(
-        firstName: event.firstName,
-        lastName: event.lastName,
-        phone: event.phone,
-        address: event.address,
-        currentPassword: event.currentPassword,
-      );
-      result.fold(
-        (failure) {
-          emit(state.copyWith(actionStatus: ProfileActionStatus.failure, errorMessage: failure.message));
-          // أعد الحالة إلى initial بعد الفشل لتتمكن من المحاولة مرة أخرى
-          emit(state.copyWith(actionStatus: ProfileActionStatus.initial));
-        },
-        (updatedProfile) {
-          emit(state.copyWith(actionStatus: ProfileActionStatus.success, profile: updatedProfile));
-          // أعد الحالة إلى initial بعد النجاح
-          emit(state.copyWith(actionStatus: ProfileActionStatus.initial));
-        },
-      );
-    } catch (e) {
-      emit(state.copyWith(actionStatus: ProfileActionStatus.failure, errorMessage: 'An unexpected error occurred: ${e.toString()}'));
-      emit(state.copyWith(actionStatus: ProfileActionStatus.initial));
-    }
+ Future<void> _onUpdateProfile(
+  UpdateProfile event,
+  Emitter<ProfileState> emit,
+) async {
+  emit(state.copyWith(actionStatus: ProfileActionStatus.loading));
+  try {
+    final result = await _teacherRepository.updateTeacherProfile(
+      firstName: event.firstName,
+      lastName: event.lastName,
+      fatherName: event.fatherName,
+      motherName: event.motherName,
+      birthDate: event.birthDate,
+      educationLevel: event.educationLevel,
+      gender: event.gender,
+      phone: event.phoneNumber,
+      address: event.address,
+      currentPassword: event.currentPassword,
+      newPassword: event.newPassword,
+      newPasswordConfirmation: event.newPasswordConfirmation,
+    );
+    result.fold(
+      (failure) {
+        emit(state.copyWith(actionStatus: ProfileActionStatus.failure, errorMessage: failure.message));
+      },
+      (updatedProfile) {
+        emit(state.copyWith(actionStatus: ProfileActionStatus.success, profile: updatedProfile));
+      },
+    );
+  } catch (e) {
+    emit(state.copyWith(actionStatus: ProfileActionStatus.failure, errorMessage: 'An unexpected error occurred: ${e.toString()}'));
+  } finally {
+    // أعد الحالة إلى initial بعد انتهاء العملية للسماح بمحاولة أخرى
+    emit(state.copyWith(actionStatus: ProfileActionStatus.initial));
   }
+}
 }

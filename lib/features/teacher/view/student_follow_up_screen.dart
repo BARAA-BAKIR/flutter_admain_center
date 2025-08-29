@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
+import 'package:flutter_admain_center/features/teacher/view/completed_parts_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_admain_center/core/constants/app_colors.dart';
@@ -96,7 +97,7 @@ class _StudentFollowUpScreenState extends State<StudentFollowUpScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
-                 duration: Duration(seconds: 2),
+                  duration: Duration(seconds: 2),
                   margin: EdgeInsets.all(16),
                   backgroundColor: Colors.orange,
                 ),
@@ -160,6 +161,29 @@ class _StudentFollowUpScreenState extends State<StudentFollowUpScreen> {
                         _buildFollowUpCard(context, state),
                         const SizedBox(height: 16),
                         _buildDutyCard(context, state),
+                        const SizedBox(height: 32),
+                        // ====================  الكود الجديد ====================
+                        const SizedBox(height: 16),
+                        _buildSectionCard(
+                          title: '📖 الأجزاء المنجزة',
+                          child: Center(
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.checklist_rtl_rounded),
+                              label: const Text('إدارة الأجزاء المنجزة'),
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => CompletedPartsScreen(
+                                          studentId: widget.studentId,
+                                          studentName: widget.studentName,
+                                        ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 32),
                         if (state.isSaving)
                           const Center(child: CircularProgressIndicator())

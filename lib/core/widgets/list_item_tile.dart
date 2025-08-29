@@ -8,13 +8,14 @@ class ListItemTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback? onTap; 
   final VoidCallback onMoreTap;
-
+  final Icon icon;
   const ListItemTile({
     super.key,
     required this.title,
     required this.subtitle,
     this.onTap ,
     required this.onMoreTap,
+    this.icon = const Icon(Icons.person, color: AppColors.steel_blue),
   });
 
   @override
@@ -22,6 +23,7 @@ class ListItemTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       elevation: 2,
+      // ignore: deprecated_member_use
       shadowColor: Colors.black.withOpacity(0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
@@ -39,7 +41,7 @@ class ListItemTile extends StatelessWidget {
           //         ),
           //       )
           //     : Icon(Icons.person, color: AppColors.steel_blue),
-          child: Icon(Icons.person, color: AppColors.steel_blue), // Placeholder
+          child: icon, // Placeholder
         ),
         title: Text(
           title,

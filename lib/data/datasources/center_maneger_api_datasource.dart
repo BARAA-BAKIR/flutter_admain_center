@@ -42,11 +42,11 @@ class CenterManegerApiDatasource {
       );
 
       // ==================== DEBUGGING CODE ====================
-      print("--- DATASOURCE CHECK ---");
-      print(
+      log("--- DATASOURCE CHECK ---");
+      log(
         "1. Raw response data type: ${response.data.runtimeType}",
       ); // يجب أن يكون List
-      print("2. Raw response data: ${response.data}");
+      log("2. Raw response data: ${response.data}");
       // ========================================================
 
       final List<dynamic> data = response.data;
@@ -54,18 +54,18 @@ class CenterManegerApiDatasource {
           data.map((json) => HalaqaNameModel.fromJson(json)).toList();
 
       // ==================== DEBUGGING CODE ====================
-      print(
+      log(
         "3. Parsed result type: ${result.runtimeType}",
       ); // يجب أن يكون List<HalaqaNameModel>
-      print(
+      log(
         "4. Parsed result count: ${result.length}",
       ); // يجب أن يكون أكبر من 0
       if (result.isNotEmpty) {
-        print(
+        log(
           "5. First item name: ${result.first.name}",
         ); // يجب أن يطبع اسم الحلقة
       }
-      print("--- END DATASOURCE CHECK ---");
+      log("--- END DATASOURCE CHECK ---");
       // ========================================================
 
       return result;
@@ -181,13 +181,13 @@ class CenterManegerApiDatasource {
   Future<Either<Failure, Map<String, dynamic>>> getDashboardSummary({
     required String token,
   }) async {
-    print("🔵 [DATASOURCE] 1. Calling getDashboardSummary API...");
+    log("🔵 [DATASOURCE] 1. Calling getDashboardSummary API...");
     return await safeApiCall(() async {
       final response = await _dio.get(
         '/center/dashboard-summary',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      print("✅ [DATASOURCE] 2. API Response Received. Data: ${response.data}");
+      log("✅ [DATASOURCE] 2. API Response Received. Data: ${response.data}");
       return response.data;
     });
   }
@@ -458,7 +458,7 @@ class CenterManegerApiDatasource {
         data: data.toJson(),
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      print(
+      log(
         "✅ [DATASOURCE] Success! Status: ${response.statusCode}, Response: ${response.data}",
       );
 
@@ -493,19 +493,42 @@ class CenterManegerApiDatasource {
       return response.data;
     });
   }
+// In lib/data/datasources/center_maneger_api_datasource.dart
+// In lib/data/datasources/center_maneger_api_datasource.dart
 
-  Future<Either<Failure, Map<String, dynamic>>> getHalaqaDetails({
-    required String token,
-    required int halaqaId,
-  }) async {
-    return await safeApiCall(() async {
-      final response = await _dio.get(
-        '/center/halaqas/$halaqaId', // المسار الجديد
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      return response.data['data']; // افترض أن البيانات تأتي داخل مفتاح 'data'
-    });
-  }
+Future<Either<Failure, Map<String, dynamic>>> getHalaqaDetails({
+  required String token,
+  required int halaqaId,
+}) async {
+  // ✅ safeApiCall يجب أن يغلف كل شيء، بما في ذلك الوصول إلى response.data
+  return await safeApiCall<Map<String, dynamic>>(() async {
+    final response = await _dio.get(
+      '/center/halaqas/$halaqaId',
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+
+    // 🔴 الخطأ المحتمل يحدث هنا. إذا لم يكن response.data من نوع Map<String, dynamic>
+    // أو إذا لم يكن يحتوي على مفتاح 'data', سيحدث Exception.
+    
+    // ✅ الحل: تحقق من النوع قبل إرجاعه
+    if (response.data is Map<String, dynamic>) {
+      // افترض أن البيانات الفعلية موجودة داخل مفتاح 'data'
+      final responseData = response.data;
+      if (responseData.containsKey('data') && responseData['data'] is Map<String, dynamic>) {
+        print('✅ RAW JSON (data key): ${responseData['data']}');
+        return responseData['data'] as Map<String, dynamic>;
+      } else {
+        // إذا لم يكن هناك مفتاح 'data', افترض أن البيانات هي الكائن بأكمله
+        print('✅ RAW JSON (root): ${response.data}');
+        return response.data;
+      }
+    } else {
+      // إذا كانت البيانات ليست Map, فهذا خطأ في التنسيق من الخادم
+      throw const ParsingFailure(message: 'تنسيق البيانات المستلمة من الخادم غير صحيح.');
+    }
+  });
+}
+
 
   // دالة لجلب تقرير الطلاب
   Future<Either<Failure, List<Map<String, dynamic>>>> getStudentsReport({

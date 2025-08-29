@@ -74,7 +74,7 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
           id: event.updatedStudent.id,
           firstName: event.updatedStudent.firstName,
           lastName: event.updatedStudent.lastName,
-          halaqaName: event.updatedStudent.halaqa?.name, // الوصول الآمن لاسم الحلقة
+          halaqaName: event.updatedStudent.halaqan?.name, // الوصول الآمن لاسم الحلقة
         );
       }
       // إذا لم يكن هو الطالب المطلوب، أرجعه كما هو

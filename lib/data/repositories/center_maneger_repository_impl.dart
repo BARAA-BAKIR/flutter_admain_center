@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:dartz/dartz.dart';
 import 'package:flutter_admain_center/core/error/failures.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_admain_center/data/datasources/center_maneger_api_dataso
 import 'package:flutter_admain_center/data/models/center_maneger/add_halaqa_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/add_teacher_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/dashboard_summary_model.dart';
+import 'package:flutter_admain_center/data/models/center_maneger/halaqa_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/halaqa_name_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/mosque_model.dart';
 import 'package:flutter_admain_center/data/models/center_maneger/mosque_selection_model.dart';
@@ -88,34 +90,32 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     final userToken = jsonDecode(userDataJson)['token'];
 
     final result = await datasource.getDashboardSummary(token: userToken);
-    print("🔵 [REPOSITORY] 3. Data received from Datasource. Result: $result");
+    log("🔵 [REPOSITORY] 3. Data received from Datasource. Result: $result");
     return result.fold(
       (failure) {
         // ==================== DEBUGGING CODE ====================
-        print(
-          "❌ [REPOSITORY] 4a. API call failed. Failure: ${failure.message}",
-        );
+        log("❌ [REPOSITORY] 4a. API call failed. Failure: ${failure.message}");
         // ========================================================
         return Left(failure);
       },
       (data) {
         // ==================== DEBUGGING CODE ====================
-        print(
+        log(
           "🔵 [REPOSITORY] 4b. API call successful. Raw data to be parsed: $data",
         );
         // ========================================================
         try {
           final summary = DashboardSummaryCenter.fromJson(data);
           // ==================== DEBUGGING CODE ====================
-          print(
+          log(
             "✅ [REPOSITORY] 5. Parsing successful. Parsed Object: student_count=${summary.studentCount}, present=${summary.presentPercentage}",
           );
           // ========================================================
           return Right(summary);
         } catch (e, stacktrace) {
           // ==================== DEBUGGING CODE ====================
-          print("❌ [REPOSITORY] 5. PARSING FAILED! Error: $e");
-          print("   Stacktrace: $stacktrace");
+          log("❌ [REPOSITORY] 5. PARSING FAILED! Error: $e");
+          log("   Stacktrace: $stacktrace");
           // ========================================================
           return Left(
             ParsingFailure(
@@ -196,8 +196,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
   @override
   Future<Either<Failure, void>> deleteStudent(int studentId) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     return await datasource.deleteStudent(token: token, studentId: studentId);
   }
   // ... (أضف باقي الدوال بنفس الطريقة لـ update, transfer, getFiltersData)
@@ -212,8 +213,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     int? levelId,
   }) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     return await datasource.getStudents(
       token: token,
       page: page,
@@ -241,8 +243,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
   @override
   Future<Either<Failure, void>> deleteHalaqa(int halaqaId) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     return await datasource.deleteHalaqa(token: token, halaqaId: halaqaId);
   }
 
@@ -253,8 +256,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     int? halaqaId,
   }) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
 
     // تحويل التواريخ إلى نص بصيغة yyyy-MM-dd
     final formatter = DateFormat('yyyy-MM-dd');
@@ -275,8 +279,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     required Map<String, dynamic> studentData,
   }) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     return await datasource.updateStudent(
       token: token,
       studentId: studentId,
@@ -287,8 +292,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
   @override
   Future<Either<Failure, Map<String, dynamic>>> getFiltersData() async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
 
     final result = await datasource.getFiltersData(token: token);
     return result.fold((failure) => Left(failure), (data) => Right(data));
@@ -300,8 +306,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     required int newHalaqaId,
   }) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     return await datasource.transferStudent(
       token: token,
       studentId: studentId,
@@ -315,8 +322,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     int studentId,
   ) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
 
     final result = await datasource.getStudentDetails(
       token: token,
@@ -325,26 +333,26 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
 
     return result.fold(
       (failure) {
-        print("❌ [Repository] API call failed: ${failure.message}");
+        log("❌ [Repository] API call failed: ${failure.message}");
         return Left(failure);
       },
       (data) {
         // ==================== هنا هو التعديل الأهم ====================
-        print("✅ [Repository] Received JSON data from API:");
+        log("✅ [Repository] Received JSON data from API:");
         // طباعة الـ JSON بشكل منسق وواضح
         JsonEncoder encoder = const JsonEncoder.withIndent('  ');
-        String prettyprint = encoder.convert(data);
-        print(prettyprint);
+        String prettylog = encoder.convert(data);
+        log(prettylog);
         // =============================================================
 
         try {
-          print("  ▶️ Attempting to parse JSON into StudentDetails model...");
+          log("  ▶️ Attempting to parse JSON into StudentDetails model...");
           final studentDetails = StudentDetails.fromJson(data);
-          print("  ✅ Parsing successful!");
+          log("  ✅ Parsing successful!");
           return Right(studentDetails);
         } catch (e, stackTrace) {
-          print("❌❌❌ [Repository] CRITICAL PARSING ERROR: $e");
-          print(stackTrace);
+          log("❌❌❌ [Repository] CRITICAL PARSING ERROR: $e");
+          log(stackTrace as String);
           return Left(
             ParsingFailure(message: 'فشل تحليل تفاصيل الطالب: ${e.toString()}'),
           );
@@ -357,8 +365,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
   Future<Either<Failure, List<TeacherSelectionModel>>>
   getTeachersForSelection() async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     // ✅ ببساطة قم باستدعاء الدالة وتمرير نتيجتها
     return await datasource.getTeachersForSelection(token: token);
   }
@@ -367,8 +376,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
   Future<Either<Failure, List<MosqueSelectionModel>>>
   getMosquesForSelection() async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     // ✅ ببساطة قم باستدعاء الدالة وتمرير نتيجتها
     return await datasource.getMosquesForSelection(token: token);
   }
@@ -377,8 +387,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
   Future<Either<Failure, List<Map<String, dynamic>>>>
   getHalaqaTypesForSelection() async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     // ✅ ببساطة قم باستدعاء الدالة وتمرير نتيجتها
     return await datasource.getHalaqaTypesForSelection(token: token);
   }
@@ -386,8 +397,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
   @override
   Future<Either<Failure, void>> addHalaqa(AddHalaqaModel halaqaData) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     // ✅ ببساطة قم باستدعاء الدالة وتمرير نتيجتها
     final result = await datasource.addHalaqa(
       token: token,
@@ -402,8 +414,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     int halaqaId,
   ) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     return await datasource.getHalaqaForEdit(halaqaId, token);
   }
 
@@ -413,16 +426,18 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     AddHalaqaModel halaqaData,
   ) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     return await datasource.updateHalaqa(halaqaId, halaqaData, token);
   }
 
   @override
   Future<Either<Failure, void>> deleteTeacher(int teacherId) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
     return await datasource.deleteTeacher(token: token, teacherId: teacherId);
   }
 
@@ -431,8 +446,9 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     AddTeacherModel teacherData,
   ) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
 
     // 1. استدعاء مصدر البيانات الذي يرجع Map<String, dynamic>
     final result = await datasource.addTeacher(teacherData, token);
@@ -490,31 +506,51 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
       (data) => Right(TeacherDetailsModel.fromJson(data)),
     );
   }
+  // In lib/data/repositories/center_maneger_repository_impl.dart
+
+  // In lib/data/repositories/center_maneger_repository_impl.dart
 
   @override
   Future<Either<Failure, Halaqa>> getHalaqaDetails(int halaqaId) async {
     final token = await _getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل'));
+    }
 
+    // استدعاء الدالة من الـ Datasource
     final result = await datasource.getHalaqaDetails(
       token: token,
       halaqaId: halaqaId,
     );
 
-    return result.fold((failure) => Left(failure), (data) {
-      try {
-        // الـ API يرجع بيانات الحلقة مباشرة، نقوم بتحويلها إلى مودل
-        return Right(Halaqa.fromJson(data));
-      } catch (e) {
-        return Left(
-          ParsingFailure(
-            message: 'فشل تحليل بيانات تفاصيل الحلقة',
-            details: e.toString(),
-          ),
-        );
-      }
-    });
+    // ✅ --- هذا هو الجزء الأهم في الحل الجذري --- ✅
+    return result.fold(
+      // إذا فشل الطلب من الأساس (شبكة, سيرفر, ...)، أرجع الخطأ كما هو
+      (failure) => Left(failure),
+
+      // إذا نجح الطلب وجاءت البيانات (data), حاول تحليلها
+      (data) {
+        try {
+          // 🚀 محاولة تحويل الـ Map إلى كائن Halaqa
+          final halaqa = Halaqa.fromJson(data);
+          return Right(halaqa);
+        } catch (e, stackTrace) {
+          // 💣 إذا فشلت عملية التحويل، التقط الخطأ هنا
+          print('❌ PARSING FAILED in Repository!');
+          print('ERROR: $e');
+          print('STACK TRACE: $stackTrace');
+
+          // 🛡️ قم بإرجاع خطأ من نوع ParsingFailure بدلاً من ترك التطبيق ينهار
+          return Left(
+            ParsingFailure(
+              message:
+                  'فشل تحليل بيانات تفاصيل الحلقة. قد يكون هناك عدم توافق بين التطبيق والخادم.',
+              details: e.toString(),
+            ),
+          );
+        }
+      },
+    );
   }
 
   @override
@@ -590,8 +626,12 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
       (data) => Right(data['message']),
     );
   }
+
   @override
-  Future<Either<Failure, Mosque>> updateMosque(int mosqueId, Map<String, dynamic> mosqueData) async {
+  Future<Either<Failure, Mosque>> updateMosque(
+    int mosqueId,
+    Map<String, dynamic> mosqueData,
+  ) async {
     final token = await _getToken();
     final result = await datasource.updateMosque(
       token: token!,

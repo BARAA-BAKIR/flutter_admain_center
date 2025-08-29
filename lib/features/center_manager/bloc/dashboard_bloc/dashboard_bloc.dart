@@ -10,8 +10,10 @@ part 'dashboard_state.dart';
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   final CenterManagerRepository centerManagerRepository;
 
-  DashboardBloc({required this.centerManagerRepository}) : super(const DashboardState()) {
+  DashboardBloc({required this.centerManagerRepository}) : 
+  super(const DashboardState()) {
     on<FetchDashboardSummary>(_onFetchDashboardSummary);
+    
   }
 
   Future<void> _onFetchDashboardSummary(FetchDashboardSummary event, Emitter<DashboardState> emit) async {

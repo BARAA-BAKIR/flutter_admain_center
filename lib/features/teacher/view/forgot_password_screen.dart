@@ -43,6 +43,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.light_gray.withOpacity(0.7),
       appBar: AppBar(
         title: Text('نسيت كلمة المرور', style: GoogleFonts.tajawal()),
         backgroundColor: Colors.transparent,
@@ -99,7 +100,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                     controller: _emailController,
                     decoration: const InputDecoration(
                       labelText: 'البريد الإلكتروني',
-                      prefixIcon: Icon(Icons.alternate_email),
+                      prefixIcon: Icon(Icons.email),
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.emailAddress,

@@ -25,7 +25,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: Text('ملفي الشخصي', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        title: Text(
+          'ملفي الشخصي',
+          style: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColors.steel_blue,
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -33,33 +36,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              // ==================== هنا هو الإصلاح الكامل ====================
-
-              // 1. احصل على بيانات البروفايل الحالية من حالة البلوك
               final currentProfile = context.read<ProfileBloc>().state.profile;
-
-              // 2. تحقق من أن البيانات ليست فارغة (null) قبل الانتقال
               if (currentProfile != null) {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    // 3. أزل 'const' ومرر البيانات المطلوبة 'profile'
-                    builder: (_) => EditProfileScreen(profile: currentProfile),
-                  ),
-                );
-              } else {
-                // إذا كانت البيانات غير متاحة لسبب ما، أبلغ المستخدم
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('لا يمكن التعديل قبل تحميل البيانات بنجاح.'),
-                    backgroundColor: Colors.orange,
-                    duration: Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                    ),
+                    builder:
+                        (_) => BlocProvider.value(
+                          // نحن نمرر نفس نسخة البلوك الحالية
+                          value: context.read<ProfileBloc>(),
+                          child: EditProfileScreen(profile: currentProfile),
+                        ),
                   ),
                 );
               }
+
+              // } else {
+              //                 // إذا كانت البيانات غير متاحة لسبب ما، أبلغ المستخدم
+              //                 ScaffoldMessenger.of(context).showSnackBar(
+              //                   const SnackBar(
+              //                     content: Text('لا يمكن التعديل قبل تحميل البيانات بنجاح.'),
+              //                     backgroundColor: Colors.orange,
+              //                     duration: Duration(seconds: 2),
+              //                     behavior: SnackBarBehavior.floating,
+              //                     shape: RoundedRectangleBorder(
+              //                       borderRadius: BorderRadius.all(Radius.circular(10)),
+              //                     ),
+              //                   ),
+              //                 );
+              //               }
               // ==============================================================
             },
           ),
@@ -77,20 +81,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: GoogleFonts.tajawal(color: Colors.red),
               ),
             );
-          } else if (state.status == ProfileStatus.success && state.profile != null) {
+          } else if (state.status == ProfileStatus.success &&
+              state.profile != null) {
             final user = state.profile!;
             return ListView(
               padding: const EdgeInsets.all(16.0),
               children: [
-                _buildInfoTile('الاسم الكامل', '${user.firstName} ${user.lastName}'),
-                _buildInfoTile('اسم الأب', user.fatherName),
-                _buildInfoTile('اسم الأم', user.motherName),
+                _buildInfoTile(
+                  'الاسم الكامل',
+                  '${user.firstName} ${user.lastName}',
+                ),
+                _buildInfoTile('اسم الأب', user.fatherName ?? ''),
+                _buildInfoTile('اسم الأم', user.motherName ?? ''),
                 _buildInfoTile('البريد الإلكتروني', user.email),
                 _buildInfoTile('رقم الهاتف', user.phoneNumber),
-                _buildInfoTile('تاريخ الميلاد', user.birthDate),
-                _buildInfoTile('المستوى التعليمي', user.educationLevel),
-                _buildInfoTile('تاريخ بداية العمل', user.startDate),
-                _buildInfoTile('العنوان', user.address),
+                _buildInfoTile('تاريخ الميلاد', user.birthDate != null
+                    ? '${user.birthDate!.year}-${user.birthDate!.month.toString().padLeft(2, '0')}-${user.birthDate!.day.toString().padLeft(2, '0')}'
+                    : ''),
+                _buildInfoTile('المستوى التعليمي', user.educationLevel ?? ''),
+                _buildInfoTile('تاريخ بداية العمل', user.startDate != null
+                    ? '${user.startDate!.year}-${user.startDate!.month.toString().padLeft(2, '0')}-${user.startDate!.day.toString().padLeft(2, '0')}'
+                    : ''),
+                _buildInfoTile('العنوان', user.address ?? ''),
               ],
             );
           }
@@ -104,8 +116,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
-        title: Text(title, style: GoogleFonts.tajawal(color: Colors.grey.shade600)),
-        subtitle: Text(value, style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        title: Text(
+          title,
+          style: GoogleFonts.tajawal(color: Colors.grey.shade600),
+        ),
+        subtitle: Text(
+          value,
+          style: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

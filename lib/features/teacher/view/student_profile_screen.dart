@@ -171,7 +171,7 @@ class StudentProfileView extends StatelessWidget {
             Expanded(
               child: _buildInfoCard(
                 'متوسط الحفظ',
-                stats.monthlyMemorizationAvg.toStringAsFixed(1) + ' / 5',
+                '${stats.monthlyMemorizationAvg.toStringAsFixed(1)} / 5',
               ),
             ),
             const SizedBox(width: 16),
@@ -294,11 +294,11 @@ class StudentProfileView extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(vertical: 4),
                 child: ListTile(
                   leading: Icon(
-                    (record.attendance == true)
+                    (record.attendance == 1)
                         ? Icons.check_circle
                         : Icons.cancel,
                     color:
-                        (record.attendance == true) ? Colors.green : Colors.red,
+                        (record.attendance == 1) ? Colors.green : Colors.red,
                   ),
                   title: Text(
                     DateFormat(
@@ -307,7 +307,7 @@ class StudentProfileView extends StatelessWidget {
                     ).format(DateTime.parse(record.date)),
                   ),
                   trailing: Text(
-                    (record.attendance == true) ? 'حاضر' : 'غائب',
+                    (record.attendance == 1) ? 'حاضر' : 'غائب',
                     style: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
                   ),
                 ),
