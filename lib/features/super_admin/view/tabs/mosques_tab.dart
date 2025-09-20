@@ -133,9 +133,10 @@ class MosquesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => MosquesBloc(
-        repository: context.read<SuperAdminRepository>(),
-      )..add(const FetchMosques()), // ✅ طلب البيانات عند إنشاء البلوك
+      create:
+          (context) =>
+              MosquesBloc(repository: context.read<SuperAdminRepository>())
+                ..add(const FetchMosques()), // ✅ طلب البيانات عند إنشاء البلوك
       child: const MosquesView(),
     );
   }
@@ -168,7 +169,8 @@ class _MosquesViewState extends State<MosquesView> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       context.read<MosquesBloc>().add(FetchMoreMosques());
     }
   }
@@ -184,10 +186,11 @@ class _MosquesViewState extends State<MosquesView> {
   void _navigateToAddEdit(MosqueModel? mosque) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: context.read<MosquesBloc>(),
-          child: AddEditMosqueScreen(mosque: mosque),
-        ),
+        builder:
+            (_) => BlocProvider.value(
+              value: context.read<MosquesBloc>(),
+              child: AddEditMosqueScreen(mosque: mosque),
+            ),
       ),
     );
   }
@@ -195,7 +198,7 @@ class _MosquesViewState extends State<MosquesView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-       backgroundColor: AppColors.light_gray,
+      backgroundColor: AppColors.light_gray,
       body: Column(
         children: [
           SearchAndFilterBar(
@@ -205,29 +208,59 @@ class _MosquesViewState extends State<MosquesView> {
           Expanded(
             child: BlocBuilder<MosquesBloc, MosquesState>(
               builder: (context, state) {
-                if (state.status == MosquesStatus.loading && state.mosques.isEmpty) {
+                if (state.status == MosquesStatus.loading &&
+                    state.mosques.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (state.status == MosquesStatus.failure && state.mosques.isEmpty) {
-                  return Center(child: Text('فشل تحميل البيانات: ${state.errorMessage}'));
+                if (state.status == MosquesStatus.failure &&
+                    state.mosques.isEmpty) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Center(
+                        child: Text(
+                          'فشل تحميل البيانات: ${state.errorMessage}',
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed:
+                            () async => context.read<MosquesBloc>().add(
+                              const FetchMosques(),
+                            ),
+                        icon: Icon(Icons.replay_outlined),
+                        label: Text('إعادة المحاولة'),
+                      ),
+                    ],
+                  );
                 }
                 if (state.mosques.isEmpty) {
                   return const Center(child: Text('لا توجد مساجد لعرضها.'));
                 }
                 return RefreshIndicator(
-                  onRefresh: () async => context.read<MosquesBloc>().add(const FetchMosques()),
+                  onRefresh:
+                      () async =>
+                          context.read<MosquesBloc>().add(const FetchMosques()),
                   child: ListView.builder(
                     controller: _scrollController,
-                    itemCount: state.hasReachedMax ? state.mosques.length : state.mosques.length + 1,
+                    itemCount:
+                        state.hasReachedMax
+                            ? state.mosques.length
+                            : state.mosques.length + 1,
                     itemBuilder: (context, index) {
                       if (index >= state.mosques.length) {
-                        return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
                       }
                       final mosque = state.mosques[index];
                       return ListItemTile(
                         icon: const Icon(Icons.mosque_rounded),
                         title: mosque.name,
-                        subtitle: 'المركز: ${mosque.centerName ?? 'غير محدد'} - العنوان: ${mosque.address}',
+                        subtitle:
+                            'المركز: ${mosque.centerName ?? 'غير محدد'} - العنوان: ${mosque.address}',
                         // ✅ تفعيل قائمة الخيارات
                         onMoreTap: () => _showOptions(context, mosque),
                       );
@@ -241,7 +274,8 @@ class _MosquesViewState extends State<MosquesView> {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'fab_mosques',
-        onPressed: () => _navigateToAddEdit(null), // استدعاء دالة الانتقال للإضافة
+        onPressed:
+            () => _navigateToAddEdit(null), // استدعاء دالة الانتقال للإضافة
         child: const Icon(Icons.add),
       ),
     );
@@ -264,25 +298,47 @@ class _MosquesViewState extends State<MosquesView> {
             ),
             ListTile(
               leading: Icon(Icons.delete_forever, color: Colors.red.shade700),
-              title: Text('حذف المسجد', style: TextStyle(color: Colors.red.shade700)),
+              title: Text(
+                'حذف المسجد',
+                style: TextStyle(color: Colors.red.shade700),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 showDialog(
                   context: context,
-                  builder: (dialogCtx) => AlertDialog(
-                    title: const Text('تأكيد الحذف'),
-                    content: Text('هل أنت متأكد من رغبتك في حذف مسجد "${mosque.name}"؟'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('إلغاء')),
-                      TextButton(
-                        child: const Text('حذف', style: TextStyle(color: Colors.red)),
-                        onPressed: () {
-                          context.read<MosquesBloc>().add(DeleteMosque(mosque.id));
-                          Navigator.pop(dialogCtx);
-                        },
+                  builder:
+                      (dialogCtx) => AlertDialog(
+                        title: const Text('تأكيد الحذف'),
+                        content: Text(
+                          'هل أنت متأكد من رغبتك في حذف مسجد "${mosque.name}"؟',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogCtx),
+                            child: const Text('إلغاء'),
+                          ),
+                          TextButton(
+                            child: const Text(
+                              'حذف',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                            onPressed: () {
+                              context.read<MosquesBloc>().add(
+                                DeleteMosque(mosque.id),
+                              );
+                                ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: Text('تم الحذف بنجاح'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              Navigator.pop(dialogCtx);
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
                 );
               },
             ),

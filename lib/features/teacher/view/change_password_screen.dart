@@ -69,6 +69,7 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
       ),
       body: BlocListener<ChangePasswordBloc, ChangePasswordState>(
         listener: (context, state) {
+          
           if (state is ChangePasswordSuccess) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
@@ -216,8 +217,10 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
       decoration: InputDecoration(
         labelText: labelText,
         labelStyle: GoogleFonts.tajawal(),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+        gapPadding: 6),
         prefixIcon: const Icon(Icons.lock_outline),
+      
         suffixIcon: IconButton(
           icon: Icon(isVisible ? Icons.visibility_off : Icons.visibility),
           onPressed: toggleVisibility,

@@ -88,7 +88,7 @@ class ProgressStagesBloc extends Bloc<ProgressStagesEvent, ProgressStagesState> 
     Emitter<ProgressStagesState> emit,
   ) async {
     emit(ProgressStagesLoading());
-    final result = await repository.getProgressStages();
+    final result = await repository.getProgressStagesForFilter();
     result.fold(
       (failure) => emit(ProgressStagesError(failure.message)),
       (stages) => emit(ProgressStagesLoaded(stages)),

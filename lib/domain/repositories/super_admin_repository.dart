@@ -1,7 +1,6 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:flutter_admain_center/core/error/failures.dart';
-import 'package:flutter_admain_center/data/models/super_admin/center_filter_model.dart';
 import 'package:flutter_admain_center/data/models/super_admin/center_manager.dart';
 import 'package:flutter_admain_center/data/models/super_admin/center_model.dart';
 import 'package:flutter_admain_center/data/models/super_admin/ending_user_model.dart';
@@ -10,7 +9,6 @@ import 'package:flutter_admain_center/data/models/super_admin/halaqa_type_model.
 import 'package:flutter_admain_center/data/models/super_admin/paginated_response.dart';
 import 'package:flutter_admain_center/data/models/super_admin/part_model.dart';
 import 'package:flutter_admain_center/data/models/super_admin/permission_model.dart';
-import 'package:flutter_admain_center/data/models/super_admin/profile_model.dart';
 import 'package:flutter_admain_center/data/models/super_admin/role_model.dart';
 import 'package:flutter_admain_center/data/models/super_admin/student_details_model.dart';
 import 'package:flutter_admain_center/data/models/super_admin/student_list_model.dart';
@@ -19,16 +17,24 @@ import 'package:flutter_admain_center/data/models/super_admin/user_profile_model
 
 abstract class SuperAdminRepository {
   Future<Either<Failure, Map<String, dynamic>>> getDashboardSummary();
-  Future<Either<Failure, List<Map<String, dynamic>>>> getStudentReport({
+   Future<Either<Failure, List<Map<String, dynamic>>>> getComprehensiveStudentReport({
     DateTime? startDate,
     DateTime? endDate,
+    int? centerId,
+    int? halaqaId,
   });
-  Future<Either<Failure, List<Map<String, dynamic>>>> getAttendanceReport({
+
+  Future<Either<Failure, List<Map<String, dynamic>>>> getTeacherProductivityReport({
     required DateTime startDate,
     required DateTime endDate,
     int? centerId,
   });
-  Future<Either<Failure, List<Map<String, dynamic>>>> getTeacherReport();
+
+  Future<Either<Failure, List<Map<String, dynamic>>>> getGeneralAttendanceReport({
+    required DateTime startDate,
+    required DateTime endDate,
+    int? centerId,
+  });
   Future<Either<Failure, List<Map<String, dynamic>>>> getCentersList();
   Future<Either<Failure, Map<String, dynamic>>> getCenters({
     required int page,
@@ -88,7 +94,7 @@ abstract class SuperAdminRepository {
   Future<Either<Failure, void>> deleteHalaqaType(int id);
 
   // مراحل تقدم الطالب
-  Future<Either<Failure, List<StudentProgressStage>>> getProgressStages();
+  // Future<Either<Failure, List<StudentProgressStage>>> getProgressStages();
   Future<Either<Failure, void>> addProgressStage(String name);
   Future<Either<Failure, void>> updateProgressStage(int id, String name);
   Future<Either<Failure, void>> deleteProgressStage(int id);
@@ -101,17 +107,7 @@ abstract class SuperAdminRepository {
 
   // Future<Either<Failure, Map<String, dynamic>>> getProfile();
   Future<Either<Failure, void>> verifyPassword(String password);
-  // Future<Either<Failure, void>> updateProfile(Map<String, dynamic> data);
-  // Future<Either<Failure, List<Mosque>>> getMosques();
-  // Future<Either<Failure, void>> addMosque(Map<String, dynamic> data);
-  // Future<Either<Failure, void>> deleteMosque(int id);
-
-  // دوال إدارة الحلقات
-  // Future<Either<Failure, List<Halaqa>>> getHalaqas();
-  // Future<Either<Failure, void>> addHalaqa(Map<String, dynamic> data);
-  // Future<Either<Failure, void>> deleteHalaqa(int id);
-  // دوال إدارة مدراء المراكز
-  Future<Either<Failure, List<CenterManagerModel>>> getCenterManagers();
+  Future<Either<Failure, List<CenterManagerModel>>> getCenterManagers({String? searchQuery});
   Future<Either<Failure, void>> addCenterManager(Map<String, dynamic> data);
   Future<Either<Failure, void>> updateCenterManager({
     required int id,
@@ -151,38 +147,20 @@ abstract class SuperAdminRepository {
     Map<String, dynamic> data,
   );
 
-  // ... (داخل abstract class SuperAdminRepository)
-
-  // Student Management
-  // Future<Either<Failure, PaginatedResponse<StudentListItem>>> getAllStudents({
-  //   required int page,
-  //   String? searchQuery,
-  //   int? centerId,
-  //   int? halaqaId,
-  // });
-  // Future<Either<Failure, StudentDetails>> getStudentDetails(int studentId);
-  Future<Either<Failure, void>> addStudentBySuperAdmin(
+ Future<Either<Failure, void>> addStudentBySuperAdmin(
     Map<String, dynamic> data,
   );
   Future<Either<Failure, void>> updateStudentBySuperAdmin(
     int studentId,
     Map<String, dynamic> data,
   );
-  // Future<Either<Failure, void>> deleteStudent(int studentId);
-
-  // Data for Filters
-  // Future<Either<Failure, List<CenterFilterModel>>> getCentersForFilter();
-  // Future<Either<Failure, List<Map<String, dynamic>>>> getHalaqasForFilter(
-  //   int centerId,
-  // );
-  Future<Either<Failure, PaginatedResponse<StudentListItem>>> getAllStudents({
+   Future<Either<Failure, PaginatedResponse<StudentListItem>>> getAllStudents({
     required int page,
     String? searchQuery,
     int? centerId,
     int? halaqaId,
   });
-  // ... (داخل abstract class SuperAdminRepository)
-
+  
   Future<Either<Failure, void>> addTeacher(Map<String, dynamic> data);
   Future<Either<Failure, void>> updateTeacher({
     required int teacherId,

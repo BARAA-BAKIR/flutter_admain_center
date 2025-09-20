@@ -48,7 +48,6 @@ class _AddEditManagerViewState extends State<AddEditManagerView> {
   final _docNumberController = TextEditingController();
   final _educationController = TextEditingController();
   final _salaryController = TextEditingController();
-
   // State variables
   int? _selectedUserId;
   int? _selectedCenterId;
@@ -76,6 +75,8 @@ class _AddEditManagerViewState extends State<AddEditManagerView> {
       _gender = m.gender;
       _selectedUserId = m.id;
       _selectedCenterId = m.centerId;
+      // _memorizedPartsController.text = m.memorizedParts.toString();
+      // _status = m.status;
     }
   }
 
@@ -92,11 +93,39 @@ class _AddEditManagerViewState extends State<AddEditManagerView> {
     _docNumberController.dispose();
     _educationController.dispose();
     _salaryController.dispose();
+    // _memorizedPartsController.dispose();
     super.dispose();
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      final isFormValid = _formKey.currentState?.validate() ?? false;
+
+      // ✅ الخطوة 2: أضف تحققاً يدوياً من حقول التاريخ
+      if (!isFormValid) {
+        // إذا كانت الحقول النصية غير صالحة، لا تكمل
+        return;
+      }
+
+      if (_birthDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('الرجاء اختيار تاريخ الميلاد'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return; // أوقف العملية
+      }
+
+      if (_startDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('الرجاء اختيار تاريخ بدء العمل'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return; // أوقف العملية
+      }
       final bloc = context.read<AddEditManagerBloc>();
       final data = {
         'first_name': _firstNameController.text,
@@ -120,25 +149,36 @@ class _AddEditManagerViewState extends State<AddEditManagerView> {
                 ? DateFormat('yyyy-MM-dd').format(_startDate!)
                 : null,
         'center_id': _selectedCenterId,
+        // 'memorized_parts': _memorizedPartsController.text,
+        // 'status': _status,
       };
 
+      // --- بداية التعديل ---
+
       if (widget.manager == null) {
-        if (_selectedUserId == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('الرجاء اختيار موظف لترقيته')),
-          );
-          return;
-        }
-        data['user_id'] = _selectedUserId;
+        // وضع الإضافة
+        // لم نعد بحاجة للتحقق من _selectedUserId
+        // if (_selectedUserId == null) { ... } // <--- احذف هذا الشرط بالكامل
+
+        // تأكد من إضافة كلمة المرور عند الإنشاء فقط
         if (_passwordController.text.isNotEmpty) {
           data['password'] = _passwordController.text;
+        } else {
+          // إذا كانت كلمة المرور مطلوبة دائماً عند الإنشاء، يمكنك إظهار خطأ هنا
+          // لكن الـ validator يقوم بذلك بالفعل.
         }
+
+        // لم نعد بحاجة لإضافة user_id هنا، فالـ backend يقوم بإنشائه
+        // data['user_id'] = _selectedUserId; // <--- احذف هذا السطر
+
         bloc.add(SubmitNewManager(data: data));
       } else {
+        // وضع التعديل
         bloc.add(
           SubmitManagerUpdate(managerId: widget.manager!.id, data: data),
         );
       }
+      // --- نهاية التعديل ---
     }
   }
 
@@ -157,14 +197,39 @@ class _AddEditManagerViewState extends State<AddEditManagerView> {
       body: BlocConsumer<AddEditManagerBloc, AddEditManagerState>(
         listener: (context, state) {
           if (state.status == FormStatus.success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  widget.manager != null
+                      ? 'تم الحفظ بنجاح'
+                      : 'تمت الإضافة بنجاح',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+              ),
+            );
+
             context.read<CenterManagersBloc>().add(LoadCenterManagers());
-            Navigator.of(context).pop();
+
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
+            });
           }
           if (state.status == FormStatus.failure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('فشل العملية: ${state.errorMessage ?? ''}'),
                 backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
               ),
             );
           }
@@ -298,10 +363,12 @@ class _AddEditManagerViewState extends State<AddEditManagerView> {
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   decoration: InputDecoration(
+                    label: Text('الجنس'),
                     floatingLabelAlignment: FloatingLabelAlignment.start,
                     icon: const Icon(Icons.wc),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
+                      gapPadding: 6,
                     ),
                   ),
                   value: _gender,
@@ -322,6 +389,7 @@ class _AddEditManagerViewState extends State<AddEditManagerView> {
                   _birthDate,
                   (date) => setState(() => _birthDate = date),
                 ),
+                 const SizedBox(height: 16),
                 _buildDatePicker(
                   context,
                   'تاريخ بدء العمل',
@@ -329,19 +397,15 @@ class _AddEditManagerViewState extends State<AddEditManagerView> {
                   (date) => setState(() => _startDate = date),
                 ),
                 const SizedBox(height: 16),
-                // This ListTile was removed as it's now redundant
-                // if (widget.manager != null && widget.manager!.centerName != null)
-                //   ListTile(...)
 
-                // ...
-
-                // ✅ 4. استخدام القائمة التي تم بناؤها
                 DropdownButtonFormField<int?>(
                   decoration: InputDecoration(
+                    label: Text('مدير لمركز'),
                     floatingLabelAlignment: FloatingLabelAlignment.start,
                     icon: const Icon(Icons.business_rounded),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
+                      gapPadding: 6,
                     ),
                   ),
                   value: _selectedCenterId,
@@ -383,28 +447,54 @@ class _AddEditManagerViewState extends State<AddEditManagerView> {
     DateTime? date,
     Function(DateTime) onDateSelected,
   ) {
-    return TextButton.icon(
-      icon: const Icon(Icons.calendar_today),
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        alignment: Alignment.center,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      label: Text(
-        date == null
-            ? label
-            : '$label${' : '}${DateFormat('yyyy-MM-dd').format(date)}',
-      ),
-      onPressed: () async {
-        final pickedDate = await showDatePicker(
-          context: context,
-          initialDate: date ?? DateTime.now(),
-          firstDate: DateTime(1950),
-          lastDate: DateTime.now(),
-        );
-        if (pickedDate != null) {
-          onDateSelected(pickedDate);
+    final bool isRequired = true;
+
+    return FormField<DateTime>(
+      // ✅ إضافة validator للـ FormField
+      validator: (value) {
+        if (isRequired && value == null) {
+          return 'هذا الحقل مطلوب'; // هذه الرسالة لن تظهر مباشرة، لكنها تجعل النموذج غير صالح
         }
+        return null;
+      },
+      initialValue: date,
+      builder: (FormFieldState<DateTime> field) {
+        return InkWell(
+          onTap: () async {
+            final pickedDate = await showDatePicker(
+              context: context,
+              initialDate: date ?? DateTime.now(),
+              firstDate: DateTime(1950),
+              lastDate: DateTime.now(),
+            );
+            if (pickedDate != null) {
+              onDateSelected(pickedDate);
+              field.didChange(pickedDate); // ✅ تحديث حالة FormField
+            }
+          },
+          child: InputDecorator(
+          decoration: InputDecoration(
+              icon: const Icon(Icons.calendar_today),
+              labelText: label,
+              // ✅ عرض رسالة الخطأ إذا كانت موجودة
+              errorText: field.errorText,
+              border: const OutlineInputBorder(),
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 14,
+                horizontal: 12,
+              ),
+            ),
+            child: Text(
+              date == null
+                  ? 'اختر $label'
+                  : DateFormat('yyyy-MM-dd').format(date),
+              style: TextStyle(
+                // ✅ تغيير لون النص إذا لم يتم الاختيار
+                color: date == null ? Theme.of(context).hintColor : null,
+              ),
+            ),
+          ),
+        );
       },
     );
   }

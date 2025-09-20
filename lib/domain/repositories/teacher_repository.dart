@@ -30,7 +30,7 @@ abstract class TeacherRepository {
 
   // --- دوال إضافة طالب ---
   Future<Either<Failure, Map<String, dynamic>>> addStudent({
-    required String token,
+   
     required AddStudentModel studentData,
   });
 
@@ -67,4 +67,5 @@ Future<Either<Failure, TeacherProfile>> updateTeacherProfile({
   Future<Either<Failure, void>> markAttendanceOnly(int studentId, int halaqaId, bool isPresent);
   Future<Either<Failure, List<Map<String, dynamic>>>> getPartsForStudent(int studentId);
 Future<Either<Failure, void>> syncStudentParts(int studentId, List<int> partIds);
+  Future<Either<Failure, void>> verifyPassword(String password);
 }

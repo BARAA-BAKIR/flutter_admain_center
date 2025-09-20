@@ -90,7 +90,8 @@ class TeacherProfile extends Equatable {
       phoneNumber: json['phone_number'] ?? '',
       address: json['address'],
       centerName: json['center_name'] ?? 'غير محدد',
-      halaqaName: json['halaqa_name'],
+      startDate:  json['start_date'] != null ? DateTime.tryParse(json['start_date']) : null,
+      // halaqaName: json['halaqa_name'],
     );
   }
 

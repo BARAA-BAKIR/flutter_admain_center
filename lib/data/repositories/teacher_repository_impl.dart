@@ -246,9 +246,10 @@ Future<Either<Failure, MyhalaqaModel?>> getMyHalaqaWithLocalData() async { // <-
 
   @override
   Future<Either<Failure, Map<String, dynamic>>> addStudent({
-    required String token,
+   
     required AddStudentModel studentData,
   }) async {
+    final String token = await getToken()??'';
     final result = await apiDatasource.addStudent(
       token: token,
       studentData: studentData,
@@ -513,7 +514,6 @@ Future<Either<Failure, MyhalaqaModel?>> getMyHalaqaWithLocalData() async { // <-
 
     return result.fold(
       (failure) {
-        print("❌ [Repository] فشل الاتصال: ${failure.message}");
         return Left(failure);
       },
       (data) {
@@ -521,7 +521,6 @@ Future<Either<Failure, MyhalaqaModel?>> getMyHalaqaWithLocalData() async { // <-
           print("✅ [Repository] البيانات قبل التحويل: $data");
           return Right(DashboardModel.fromJson(data));
         } catch (e) {
-          print("❌ [Repository] خطأ في التحويل: $e");
           return const Left(
             UnexpectedFailure(message: 'فشل في تحليل بيانات لوحة التحكم.'),
           );
@@ -617,12 +616,14 @@ Future<Either<Failure, TeacherProfile>> updateTeacherProfile({
   // دالة getTeacherProfile تبقى كما هي تقريباً، فقط تأكد أنها تتعامل مع استجابة API الجديدة
   @override
   Future<Either<Failure, TeacherProfile>> getTeacherProfile() async {
+      log('Failed to parse TeacherProfile: start');
     final String? token = await getToken();
     if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
 
     final result = await apiDatasource.getTeacherProfile(token);
+      log('Failed to parse TeacherProfile: $result');
     return result.fold((failure) => Left(failure), (data) {
       try {
         // الـ API يرجع الآن بيانات جاهزة للتحليل مباشرة
@@ -641,8 +642,9 @@ Future<Either<Failure, TeacherProfile>> updateTeacherProfile({
     String notificationId,
   ) async {
     final String? token = await getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+    }
     return await apiDatasource.markNotificationAsRead(token, notificationId);
   }
 
@@ -726,8 +728,9 @@ Future<Either<Failure, List<Map<String, dynamic>>>> getPartsForStudent(int stude
     int page,
   ) async {
     final String? token = await getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+    }
     final result = await apiDatasource.getNotifications(token);
     return result.fold((failure) => Left(failure), (data) {
       try {
@@ -752,8 +755,24 @@ Future<Either<Failure, List<Map<String, dynamic>>>> getPartsForStudent(int stude
     List<int> partIds,
   ) async {
     final token = await getToken();
-    if (token == null)
+    if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
+    }
     return await apiDatasource.syncStudentParts(token, studentId, partIds);
+  }
+
+  
+  @override
+  Future<Either<Failure, void>> verifyPassword(String password) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return Left(CacheFailure(message: 'تسجيل الدخول خاطئ'));
+      }
+      await apiDatasource.verifyPassword(token, password);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
   }
 }

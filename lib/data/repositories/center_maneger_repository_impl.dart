@@ -316,7 +316,7 @@ class CenterManegerRepositoryImpl implements CenterManagerRepository {
     );
   }
   // في ملف: lib/data/repositories/center_manager_repository_impl.dart
-
+  
   @override
   Future<Either<Failure, StudentDetails>> getStudentDetails(
     int studentId,

@@ -68,29 +68,6 @@ class _StudentsScreenState extends State<StudentsScreen> {
     });
   }
 
-  //  void _showFilterDialog() {
-  //   // نقرأ الـ repository مباشرة من الـ context الحالي
-  //   final repository = context.read<CenterManagerRepository>();
-  //   final studentBloc = context.read<StudentsBloc>(); // نحتاجه لتطبيق الفلتر
-
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     builder: (_) => BlocProvider(
-  //       // نمرر الـ repository الذي قرأناه لـ FilterBloc
-  //       create: (ctx) => FilterBloc(repository: repository)..add(LoadFilterData()),
-  //       child: FilterDialogView(
-  //         onApply: (halaqaId, levelId) {
-  //           // عند الضغط على "تطبيق"، نرسل حدثاً لـ StudentsBloc
-  //           studentBloc.add(
-  //             ApplyStudentsFilter(halaqaId: halaqaId, levelId: levelId),
-  //           );
-  //         },
-  //       ),
-  //     ),
-  //   );
-  // }
-
   // دالة لعرض قائمة الخيارات للطالب (تبقى كما هي للمستقبل)
   void _showStudentOptions(BuildContext context, StudentListItem student) {
     final centerManagerRepo = context.read<CenterManagerRepository>();
@@ -139,10 +116,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
               title: const Text('تعديل البيانات'),
               onTap: () async {
                 Navigator.pop(ctx); // أغلق النافذة السفلية أولاً
-                print(
-                  "▶️ [StudentsScreen] 'Edit' tapped. Preparing to navigate...",
-                );
-
+              
                 try {
                   // 1. احصل على كلا الـ Repositories من السياق الحالي بأمان
                   final centerManagerRepo =
@@ -292,11 +266,23 @@ class _StudentsScreenState extends State<StudentsScreen> {
                       },
         child: Column(
           children: [
-            // 2. تفعيل شريط البحث والفلترة بالكامل
+             Card(
+              // 1. تحديد الهوامش حول الكرت
+              margin: const EdgeInsets.all(10.0),
+              // 2. تحديد شكل الكرت (زوايا دائرية)
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                // 3. يمكنك إضافة إطار للكرت نفسه إذا أردت
+                side: BorderSide(color: Colors.grey.shade300, width: 1),
+              ),
+              // 4. التحكم في الظل (elevation)
+              elevation: 2.0,
+              child:
             SearchAndFilterBar(
               onSearchChanged: _onSearchChanged,
               hintText: 'ابحث عن طالب بالاسم ...',
             ),
+             ),
             // 3. ربط القائمة بالبلوك لعرض البيانات الحية
             Expanded(
               child: BlocBuilder<StudentsBloc, StudentsState>(

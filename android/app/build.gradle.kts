@@ -28,7 +28,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.flutter_admain_center"
-        minSdk = 23 // <-- IMPORTANT: Make sure this is at least 21 (مهم: تأكد أن هذا الرقم 21 أو أعلى)
+        minSdk = flutter.minSdkVersion // <-- IMPORTANT: Make sure this is at least 21 (مهم: تأكد أن هذا الرقم 21 أو أعلى)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

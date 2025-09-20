@@ -82,7 +82,7 @@ class CenterManegerApiDatasource {
       final List<dynamic> data = response.data['data'];
       return data.map((json) => LevelModel.fromJson(json)).toList();
     });
-  }
+  }  
 
   Future<Either<Failure, Map<String, dynamic>>> addStudent({
     required AddStudentModel studentData,
@@ -515,7 +515,7 @@ Future<Either<Failure, Map<String, dynamic>>> getHalaqaDetails({
       // افترض أن البيانات الفعلية موجودة داخل مفتاح 'data'
       final responseData = response.data;
       if (responseData.containsKey('data') && responseData['data'] is Map<String, dynamic>) {
-        print('✅ RAW JSON (data key): ${responseData['data']}');
+        // print('✅ RAW JSON (data key): ${responseData['data']}');
         return responseData['data'] as Map<String, dynamic>;
       } else {
         // إذا لم يكن هناك مفتاح 'data', افترض أن البيانات هي الكائن بأكمله

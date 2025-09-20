@@ -37,7 +37,7 @@ class CompletedPartsBloc extends Bloc<CompletedPartsEvent, CompletedPartsState> 
   }
 
   Future<void> _onSyncParts(SyncCompletedParts event, Emitter<CompletedPartsState> emit) async {
-    emit(state.copyWith(status: PartsStatus.submitting));
+    emit(state.copyWith(status: PartsStatus.submitting, errorMessage: null, successMessage: null)); // مسح الرسائل السابقة
     final selectedIds = state.parts
         .where((part) => part['is_completed'] == true)
         .map((part) => part['id'] as int)
@@ -46,7 +46,7 @@ class CompletedPartsBloc extends Bloc<CompletedPartsEvent, CompletedPartsState> 
     final result = await _repository.syncStudentParts(event.studentId, selectedIds);
     result.fold(
       (failure) => emit(state.copyWith(status: PartsStatus.failure, errorMessage: failure.message)),
-      (_) => emit(state.copyWith(status: PartsStatus.success)), // Go back to success state
+      (_) => emit(state.copyWith(status: PartsStatus.success, successMessage: 'تم حفظ التغييرات بنجاح!')), // أضف رسالة النجاح هنا
     );
   }
 }

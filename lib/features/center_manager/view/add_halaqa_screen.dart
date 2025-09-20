@@ -197,7 +197,10 @@ class _AddHalaqaScreenState extends State<AddHalaqaScreen> {
       onChanged: onChanged,
       validator: validator,
       decoration: InputDecoration(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        helperText: hint,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         prefixIcon: Icon(icon, color: AppColors.steel_blue),
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       ),

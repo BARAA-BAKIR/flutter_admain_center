@@ -9,8 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  google_fonts: ^6.2.1
-  intl: ^0.19.0
+  google_fonts: ^6.2.1 
+  intl: 0.20.2
   flutter_localizations:
         sdk: flutter
   dio: ^5.8.0+1
@@ -38,16 +38,18 @@ dependencies:
   share_plus: ^11.1.0
   badges: ^3.1.2
   stream_transform: ^2.1.1
-  equatable: ^2.0.5
-  visibility_detector:  
+  equatable: ^2.0.5 
+  visibility_detector:   
   package_info_plus: ^8.3.1 
   elegant_notification: ^1.10.0
+  # uni_links: ^0.5.1
   #shared_preferences: ^2.0.13
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-
+  flutter_native_splash: ^2.3.6 
+  flutter_launcher_icons: ^0.13.1
 flutter:
   uses-material-design: true
   assets:
@@ -55,6 +57,24 @@ flutter:
     - assets/image.png
     - assets/logo.png
     - assets/image111.png 
+
+flutter_launcher_icons:
+  android: "launcher_icon"   # يمكنك تسميتها أي شيء، لكن هذا هو الاسم الشائع
+  ios: true
+  image_path: "assets/logonew1.png" #  استخدم نفس مسار الصورة التي تريدها كأيقونة
+  remove_alpha_ios: true # (موصى به) لإزالة الشفافية من أيقونات iOS
+flutter_native_splash:
+  color: "#ffffff" 
+  image: assets/logonew1.png 
+  color_dark: "#000000"
+  image_dark: assets/logodark.png 
+  android: true
+  ios: true
+  android_12:
+    image: assets/logonew1.png 
+    icon_background_color: "#ffffff" 
+    image_dark: assets/logodark.png 
+    icon_background_color_dark: "#000000"
 
 flutter_intl:
   enabled: true

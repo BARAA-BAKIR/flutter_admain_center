@@ -190,64 +190,108 @@ class RoleRouterScreen extends StatelessWidget {
         );
       } else if (user.hasRole('مدير مركز')) {
         return MultiBlocProvider(
-          providers: [
-            BlocProvider<CenterManager.DashboardBloc>(
-              create:
-                  (context) => CenterManager.DashboardBloc(
-                    centerManagerRepository:
-                        context.read<CenterManagerRepository>(),
-                  ),
+          providers: [ BlocProvider<CenterManager.DashboardBloc>(
+              create: (context) => CenterManager.DashboardBloc(
+                centerManagerRepository: context.read<CenterManagerRepository>(),
+              )..add(CenterManager.FetchDashboardSummary()), // <-- جلب بيانات الداشبورد
             ),
             BlocProvider<StudentsBloc>(
-              create:
-                  (context) => StudentsBloc(
-                    centerManagerRepository:
-                        context.read<CenterManagerRepository>(),
-                  ),
+              create: (context) => StudentsBloc(
+                centerManagerRepository: context.read<CenterManagerRepository>(),
+              )..add(const FetchStudents()), // <-- جلب الطلاب
             ),
             BlocProvider<HalaqasBloc>(
-              create:
-                  (context) => HalaqasBloc(
-                    centerManagerRepository:
-                        context.read<CenterManagerRepository>(),
-                  ),
+              create: (context) => HalaqasBloc(
+                centerManagerRepository: context.read<CenterManagerRepository>(),
+              )..add(const FetchHalaqas()), // <-- جلب الحلقات
             ),
             BlocProvider<TeachersBloc>(
-              create:
-                  (context) => TeachersBloc(
-                    centerManagerRepository:
-                        context.read<CenterManagerRepository>(),
-                  ),
+              create: (context) => TeachersBloc(
+                centerManagerRepository: context.read<CenterManagerRepository>(),
+              )..add(const FetchTeachers()), // <-- جلب الأساتذة
             ),
             BlocProvider<MosquesBloc>(
-              create:
-                  (context) => MosquesBloc(
-                    repository: context.read<CenterManagerRepository>(),
-                  ),
+              create: (context) => MosquesBloc(
+                repository: context.read<CenterManagerRepository>(),
+              )..add(const FetchMosques()), // <-- جلب المساجد
             ),
             BlocProvider<HalaqaDetailsBloc>(
-              create:
-                  (context) => HalaqaDetailsBloc(
-                    repository: context.read<CenterManagerRepository>(),
-                  ),
+              create: (context) => HalaqaDetailsBloc(
+                repository: context.read<CenterManagerRepository>(),
+              ),
+              // ملاحظة: هذا البلوك لا يحتاج لطلب أولي لأنه يعتمد على ID معين
             ),
             BlocProvider<ReportsBloc>(
-              create:
-                  (context) => ReportsBloc(
-                    centerManagerRepository:
-                        context.read<CenterManagerRepository>(),
-                  ),
+              create: (context) => ReportsBloc(
+                centerManagerRepository: context.read<CenterManagerRepository>(),
+              ),
+              // ملاحظة: هذا البلوك قد لا يحتاج لطلب أولي
             ),
             BlocProvider<CenterManager.NotificationsBloc>(
-              create:
-                  (context) => CenterManager.NotificationsBloc(
-                    notificationsRepository:
-                        context.read<NotificationsRepository>(),
-                  ),
+              create: (context) => CenterManager.NotificationsBloc(
+                notificationsRepository: context.read<NotificationsRepository>(),
+              )..add(CenterManager.FetchUnreadCount()), // <-- جلب عدد الإشعارات
             ),
           ],
           child: const CenterMainScreen(),
         );
+        //     BlocProvider<CenterManager.DashboardBloc>(
+        //       create:
+        //           (context) => CenterManager.DashboardBloc(
+        //             centerManagerRepository:
+        //                 context.read<CenterManagerRepository>(),
+        //           ),
+        //     ),
+        //     BlocProvider<StudentsBloc>(
+        //       create:
+        //           (context) => StudentsBloc(
+        //             centerManagerRepository:
+        //                 context.read<CenterManagerRepository>(),
+        //           ),
+        //     ),
+        //     BlocProvider<HalaqasBloc>(
+        //       create:
+        //           (context) => HalaqasBloc(
+        //             centerManagerRepository:
+        //                 context.read<CenterManagerRepository>(),
+        //           ),
+        //     ),
+        //     BlocProvider<TeachersBloc>(
+        //       create:
+        //           (context) => TeachersBloc(
+        //             centerManagerRepository:
+        //                 context.read<CenterManagerRepository>(),
+        //           ),
+        //     ),
+        //     BlocProvider<MosquesBloc>(
+        //       create:
+        //           (context) => MosquesBloc(
+        //             repository: context.read<CenterManagerRepository>(),
+        //           ),
+        //     ),
+        //     BlocProvider<HalaqaDetailsBloc>(
+        //       create:
+        //           (context) => HalaqaDetailsBloc(
+        //             repository: context.read<CenterManagerRepository>(),
+        //           ),
+        //     ),
+        //     BlocProvider<ReportsBloc>(
+        //       create:
+        //           (context) => ReportsBloc(
+        //             centerManagerRepository:
+        //                 context.read<CenterManagerRepository>(),
+        //           ),
+        //     ),
+        //     BlocProvider<CenterManager.NotificationsBloc>(
+        //       create:
+        //           (context) => CenterManager.NotificationsBloc(
+        //             notificationsRepository:
+        //                 context.read<NotificationsRepository>(),
+        //           ),
+        //     ),
+        //   ],
+        //   child: const CenterMainScreen(),
+        // );
       } else if (user.hasRole('استاذ')) {
         return MultiBlocProvider(
           providers: [

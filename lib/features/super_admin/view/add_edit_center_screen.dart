@@ -118,6 +118,38 @@ class _AddEditCenterViewState extends State<AddEditCenterView> {
         if (state.status == FormStatus.loading) {
           return const Center(child: CircularProgressIndicator());
         }
+ final uniqueManagers = <Map<String, dynamic>>[];
+      final seenIds = <int>{}; // مجموعة لتتبع الـ IDs التي تمت رؤيتها
+
+      for (final manager in state.potentialManagers) {
+        final managerId = manager['id'] as int;
+        if (seenIds.add(managerId)) { // .add() ترجع true إذا كانت القيمة جديدة
+          uniqueManagers.add(manager);
+        }
+      }
+  final List<DropdownMenuItem<int?>> dropdownItems = [
+        // ✅ الخطوة 1: أضف العنصر الأول يدوياً ليكون خيار "بدون مدير"
+        // قيمته ستكون null لتمييزه
+        const DropdownMenuItem<int?>(
+          value: null,
+          child: Text(
+            '-- بدون مدير --',
+            style: TextStyle(fontStyle: FontStyle.italic, color: Colors.black),
+          ),
+        ),
+      ];
+
+      // ✅ الخطوة 2: أضف باقي المدراء الفريدين إلى القائمة
+      for (final manager in uniqueManagers) {
+        dropdownItems.add(
+          DropdownMenuItem<int?>(
+            value: manager['id'] as int,
+            child: Text(manager['name'] as String),
+          ),
+        );
+      }
+      // 2. التأكد من أن القيمة المختارة الحالية صالحة وموجودة في القائمة الفريدة
+      final isManagerIdValid = uniqueManagers.any((m) => m['id'] == _selectedManagerId);
 
         return Column(
           children: [
@@ -137,28 +169,21 @@ class _AddEditCenterViewState extends State<AddEditCenterView> {
                     // ... (باقي الحقول كما هي)
                     const SizedBox(height: 16),
                     
-                    DropdownButtonFormField<int?>(
-                      
-                      value: _selectedManagerId,
-                      hint: const Text('اختر المدير المسؤول'),
-                      items: state.potentialManagers.map((manager) {
-                        return DropdownMenuItem<int>(
-                          value: manager['id'],
-                          child: Text(manager['name']),
-                        );
-                      }).toList(),
-                      onChanged: (value) => setState(() => _selectedManagerId = value),
-                      validator: (value) {
-                        if (!widget.isEditing && value == null) {
-                          return 'يجب اختيار مدير';
-                        }
-                        return null;
-                      },
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person_search),
-                      ),
+                   
+                  DropdownButtonFormField<int?>(
+                    menuMaxHeight: 300,
+                    // ✅ الإصلاح: استخدم القيمة فقط إذا كانت صالحة
+                    value: isManagerIdValid ? _selectedManagerId : null,
+                    hint: const Text('اختر المدير المسؤول'),
+                    // ✅ الإصلاح: استخدم القائمة الفريدة
+                   items: dropdownItems,
+                    onChanged: (value) => setState(() => _selectedManagerId = value),
+                    decoration: const InputDecoration(
+                      label: Text('المدير'),
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person_search),
                     ),
+                  ),
                     const SizedBox(height: 16),
                     CustomTextField(
                       controller: _governorateController,

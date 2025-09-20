@@ -4,7 +4,8 @@ class Halaqan extends Equatable {
   final int id;
   final String name;
   const Halaqan({required this.id, required this.name});
-  factory Halaqan.fromJson(Map<String, dynamic> json) => Halaqan(id: json['id'], name: json['name']);
+  factory Halaqan.fromJson(Map<String, dynamic> json) =>
+      Halaqan(id: json['id'], name: json['name']);
   @override
   List<Object?> get props => [id, name];
 }
@@ -13,7 +14,8 @@ class Level extends Equatable {
   final int id;
   final String name;
   const Level({required this.id, required this.name});
-  factory Level.fromJson(Map<String, dynamic> json) => Level(id: json['id'], name: json['name']);
+  factory Level.fromJson(Map<String, dynamic> json) =>
+      Level(id: json['id'], name: json['stage_name']);
   @override
   List<Object?> get props => [id, name];
 }
@@ -62,14 +64,34 @@ class StudentDetails extends Equatable {
       birthDate: json['birth_date'],
       gender: json['gender'],
       socialStatus: json['social_status'],
-      educationaLevel: json['educationa_level'],
+      educationaLevel: json['education_level'],
       healthStatus: json['health_status'],
       phone: json['contact_number'],
-      halaqan: progress != null && progress['halaqan'] != null ? Halaqan.fromJson(progress['halaqan']) : null,
-      level: progress != null && progress['level'] != null ? Level.fromJson(progress['level']) : null,
+      halaqan:
+          progress != null && progress['halaqa'] != null
+              ? Halaqan.fromJson(progress['halaqa'])
+              : null,
+      level:
+          progress != null && progress['student_progress_stages'] != null
+              ? Level.fromJson(progress['student_progress_stages'])
+              : null,
     );
   }
 
   @override
-  List<Object?> get props => [id, firstName, lastName, fatherName, motherName, birthDate, gender, socialStatus, educationaLevel, healthStatus, phone, halaqan, level];
+  List<Object?> get props => [
+    id,
+    firstName,
+    lastName,
+    fatherName,
+    motherName,
+    birthDate,
+    gender,
+    socialStatus,
+    educationaLevel,
+    healthStatus,
+    phone,
+    halaqan,
+    level,
+  ];
 }

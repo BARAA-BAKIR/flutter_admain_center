@@ -60,3 +60,4 @@ class DeleteTeacher extends TeacherManagementEvent {
 class FetchPrerequisitesForTeacherForm extends TeacherManagementEvent {
   const FetchPrerequisitesForTeacherForm();
 }
+class ResetTeacherFormStatus extends TeacherManagementEvent {}

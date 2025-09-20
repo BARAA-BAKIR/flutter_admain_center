@@ -66,7 +66,7 @@ class AuthApiDatasource {
 
   Future<Either<Failure, void>> forgotPassword(String email) async {
     return await safeApiCall(() async {
-      await _dio.post('/forgot-password', data: {'email': email});
+      await _dio.post('/forgot-password/admin', data: {'email': email});
       return;
     });
   }

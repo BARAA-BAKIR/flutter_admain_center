@@ -1,4 +1,3 @@
- 
 // lib/features/center_manager/view/mosques_tab.dart
 
 import 'dart:async';
@@ -57,79 +56,84 @@ class _MosquesTabState extends State<MosquesTab> {
       context.read<MosquesBloc>().add(FetchMosques(searchQuery: query));
     });
   }
-// lib/features/center_manager/view/tabs/mosques_tab.dart
+  // lib/features/center_manager/view/tabs/mosques_tab.dart
 
-void _showMosqueOptions(BuildContext context, Mosque mosque) {
-  showModalBottomSheet(
-    context: context,
-    builder: (ctx) => Wrap(
-      children: [
-        ListTile(
-          leading: const Icon(Icons.edit_note_rounded),
-          title: const Text('تعديل البيانات'),
-          onTap: () async {
-            Navigator.pop(ctx);
-            // ✅✅✅ الإصلاح الكامل والنهائي هنا ✅✅✅
-            // 1. توقع نتيجة من نوع Mosque، وليس bool
-            final updatedMosque = await Navigator.of(context).push<Mosque>(
-              MaterialPageRoute(
-                builder: (_) => EditMosqueScreen(mosque: mosque),
-              ),
-            );
-
-            // 2. إذا عادت بيانات المسجد المحدث، أرسل الحدث الصحيح
-            if (updatedMosque != null && mounted) {
-              context.read<MosquesBloc>().add(UpdateMosqueInList(updatedMosque));
-            }
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.delete_forever, color: Colors.red.shade700),
-          title: Text(
-            'حذف المسجد',
-            style: TextStyle(color: Colors.red.shade700),
-          ),
-          onTap: () {
-            Navigator.pop(ctx);
-            showDialog(
-              context: context,
-              builder: (dialogCtx) => AlertDialog(
-                title: const Text('تأكيد الحذف'),
-                content: Text(
-                  'هل أنت متأكد من رغبتك في حذف مسجد "${mosque.name}"؟ سيتم حذف جميع الحلقات والطلاب المرتبطين به.',
-                ),
-                actions: [
-                  TextButton(
-                    child: const Text('إلغاء'),
-                    onPressed: () => Navigator.pop(dialogCtx),
-                  ),
-                  TextButton(
-                    child: const Text(
-                      'حذف',
-                      style: TextStyle(color: Colors.red),
+  void _showMosqueOptions(BuildContext context, Mosque mosque) {
+    showModalBottomSheet(
+      context: context,
+      builder:
+          (ctx) => Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_note_rounded),
+                title: const Text('تعديل البيانات'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final updatedMosque = await Navigator.of(
+                    context,
+                  ).push<Mosque>(
+                    MaterialPageRoute(
+                      builder: (_) => EditMosqueScreen(mosque: mosque),
                     ),
-                    onPressed: () {
-                      context.read<MosquesBloc>().add(DeleteMosque(mosque.id));
-                      Navigator.pop(dialogCtx);
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ],
-    ),
-  );
-}
+                  );
 
+                  // 2. إذا عادت بيانات المسجد المحدث، أرسل الحدث الصحيح
+                  if (updatedMosque != null && mounted) {
+                    context.read<MosquesBloc>().add(
+                      UpdateMosqueInList(updatedMosque),
+                    );
+                  }
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.delete_forever, color: Colors.red.shade700),
+                title: Text(
+                  'حذف المسجد',
+                  style: TextStyle(color: Colors.red.shade700),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  showDialog(
+                    context: context,
+                    builder:
+                        (dialogCtx) => AlertDialog(
+                          title: const Text('تأكيد الحذف'),
+                          content: Text(
+                            'هل أنت متأكد من رغبتك في حذف مسجد "${mosque.name}"؟ سيتم حذف جميع الحلقات والطلاب المرتبطين به.',
+                          ),
+                          actions: [
+                            TextButton(
+                              child: const Text('إلغاء'),
+                              onPressed: () => Navigator.pop(dialogCtx),
+                            ),
+                            TextButton(
+                              child: const Text(
+                                'حذف',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              onPressed: () {
+                                context.read<MosquesBloc>().add(
+                                  DeleteMosque(mosque.id),
+                                );
+                                Navigator.pop(dialogCtx);
+                              },
+                            ),
+                          ],
+                        ),
+                  );
+                },
+              ),
+            ],
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
       floatingActionButton: FloatingActionButton(
-      
+        heroTag: 'add_mosque_fab',
         onPressed: () async {
           final result = await Navigator.of(context).push<bool>(
             MaterialPageRoute(builder: (_) => const AddMosqueScreen()),
@@ -147,9 +151,21 @@ void _showMosqueOptions(BuildContext context, Mosque mosque) {
         },
         child: Column(
           children: [
-            SearchAndFilterBar(
-              onSearchChanged: _onSearchChanged,
-              hintText: 'ابحث عن مسجد بالاسم أو العنوان...',
+            Card(
+              // 1. تحديد الهوامش حول الكرت
+              margin: const EdgeInsets.all(10.0),
+              // 2. تحديد شكل الكرت (زوايا دائرية)
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                // 3. يمكنك إضافة إطار للكرت نفسه إذا أردت
+                side: BorderSide(color: Colors.grey.shade300, width: 1),
+              ),
+              // 4. التحكم في الظل (elevation)
+              elevation: 2.0,
+              child: SearchAndFilterBar(
+                onSearchChanged: _onSearchChanged,
+                hintText: 'ابحث عن مسجد بالاسم أو العنوان...',
+              ),
             ),
             Expanded(
               child: BlocConsumer<MosquesBloc, MosquesState>(
@@ -235,13 +251,7 @@ void _showMosqueOptions(BuildContext context, Mosque mosque) {
                               ),
                             );
                           }
-                          // final mosque = state.mosques[index];
-                          // return ListItemTile(
-                          //   title: mosque.name,
-                          //   subtitle: 'العنوان: ${mosque.address}\nعدد الحلقات: ${mosque.halaqaCount}',
-                          // //  isThreeLine: true, // ✅✅✅ التصحيح هنا ✅✅✅
-                          //   onMoreTap: () => _showMosqueOptions(context, mosque),
-                          // );
+
                           final mosque = state.mosques[index];
                           return Card(
                             elevation: 2.0,

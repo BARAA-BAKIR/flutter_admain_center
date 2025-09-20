@@ -24,24 +24,6 @@ class AuthRepositoryImpl implements AuthRepository {
     required this.localDatasource,
   });
 
-  // @override
-  // Future<Either<Failure, Map<String, dynamic>>> login(
-  //     String email, String password, String? fcmToken) async {
-  //   final result = await datasource.login(
-  //     email: email,
-  //     password: password,
-  //     fcmToken: fcmToken,
-  //   );
-
-  //   return result.fold(
-  //     (failure) => Left(failure),
-  //     (data) async {
-  //       // يمكنك هنا حفظ التوكن إذا كان متوفرًا في الـ `data`
-  //       // مثال: if (data.containsKey('token')) { await storage.write(key: 'auth_token', value: data['token']); }
-  //       return Right(data);
-  //     },
-  //   );
-  // }
   @override
   Future<Either<Failure, UserModel>> login({
     required String email,
@@ -116,7 +98,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String newPassword,
     required String confirm,
   }) async {
-    final token = await storage.read(key: 'auth_token');
+    final token = await _getToken();
     if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
@@ -131,7 +113,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, Map<String, dynamic>>> fetchProfile() async {
-    final token = await storage.read(key: 'auth_token');
+    final token = await _getToken();
     if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
@@ -146,7 +128,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String address,
     required String passwordConfirm,
   }) async {
-    final token = await storage.read(key: 'auth_token');
+    final token = await _getToken();
     if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
@@ -204,7 +186,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, void>> updateNotificationStatus(bool status) async {
-    final token = await storage.read(key: 'auth_token');
+    final token = await _getToken();
     if (token == null) {
       return const Left(CacheFailure(message: 'المستخدم غير مسجل دخوله.'));
     }
@@ -239,31 +221,38 @@ class AuthRepositoryImpl implements AuthRepository {
       userToken: userToken,
     );
   }
-   @override
+
+  @override
   Future<Either<Failure, ProfileDetailsModel>> getProfileDetails() async {
     final token = await _getToken();
-    if (token == null) return const Left(CacheFailure(message: 'User not logged in'));
+    if (token == null)
+      return const Left(CacheFailure(message: 'User not logged in'));
 
     final result = await datasource.getProfileDetails(token: token);
-    return result.fold(
-      (failure) => Left(failure),
-      (data) {
-        try {
-          return Right(ProfileDetailsModel.fromJson(data));
-        } catch (e) {
-          return Left(ParsingFailure(message: 'Failed to parse profile details: ${e.toString()}'));
-        }
-      },
-    );
+    return result.fold((failure) => Left(failure), (data) {
+      try {
+        return Right(ProfileDetailsModel.fromJson(data));
+      } catch (e) {
+        return Left(
+          ParsingFailure(
+            message: 'Failed to parse profile details: ${e.toString()}',
+          ),
+        );
+      }
+    });
   }
 
   // ✅ تنفيذ دالة التحقق من كلمة المرور
   @override
   Future<Either<Failure, bool>> verifyPassword(String password) async {
     final token = await _getToken();
-    if (token == null) return const Left(CacheFailure(message: 'User not logged in'));
+    if (token == null)
+      return const Left(CacheFailure(message: 'User not logged in'));
 
-    final result = await datasource.verifyPassword(token: token, password: password);
+    final result = await datasource.verifyPassword(
+      token: token,
+      password: password,
+    );
     return result.fold(
       (failure) => Left(failure),
       (_) => const Right(true), // إذا نجح الطلب، فالكلمة صحيحة
@@ -272,21 +261,27 @@ class AuthRepositoryImpl implements AuthRepository {
 
   // ✅ تنفيذ دالة تحديث الملف الشخصي
   @override
-  Future<Either<Failure, ProfileDetailsModel>> updateProfileforcenteradmin(Map<String, String> data) async {
+  Future<Either<Failure, ProfileDetailsModel>> updateProfileforcenteradmin(
+    Map<String, String> data,
+  ) async {
     final token = await _getToken();
-    if (token == null) return const Left(CacheFailure(message: 'User not logged in'));
+    if (token == null)
+      return const Left(CacheFailure(message: 'User not logged in'));
 
-    final result = await datasource.updateProfileforcenteradmin(token: token, data: data);
-    return result.fold(
-      (failure) => Left(failure),
-      (updatedData) {
-        try {
-          return Right(ProfileDetailsModel.fromJson(updatedData));
-        } catch (e) {
-          return Left(ParsingFailure(message: 'Failed to parse updated profile: ${e.toString()}'));
-        }
-      },
+    final result = await datasource.updateProfileforcenteradmin(
+      token: token,
+      data: data,
     );
+    return result.fold((failure) => Left(failure), (updatedData) {
+      try {
+        return Right(ProfileDetailsModel.fromJson(updatedData));
+      } catch (e) {
+        return Left(
+          ParsingFailure(
+            message: 'Failed to parse updated profile: ${e.toString()}',
+          ),
+        );
+      }
+    });
   }
 }
-

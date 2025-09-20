@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_admain_center/core/widgets/list_item_tile.dart';
@@ -60,74 +59,109 @@ class _TeachersTabState extends State<TeachersTab> {
   void _showTeacherOptions(BuildContext context, Teacher teacher) {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => Wrap(
-        children: [
-     ListTile(
-            leading: const Icon(Icons.visibility_outlined),
-            title: const Text('عرض الملف الشخصي',
-            style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.pop(ctx); // أغلق القائمة السفلية
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  // نوفر الـ repository للبلوك الجديد
-                  builder: (_) => BlocProvider(
-                    create: (context) => TeacherProfileBloc(repository:context.read<CenterManagerRepository>(),)
-                      ..add(FetchTeacherProfile(teacher.id)), // نرسل حدث جلب البيانات فوراً
-                    child: TeacherProfileScreen(teacherName: teacher.fullName),
-                  ),
+      builder:
+          (ctx) => Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.visibility_outlined),
+                title: const Text(
+                  'عرض الملف الشخصي',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit_note_rounded),
-            title: const Text('تعديل البيانات'),
-            onTap: () async {
-              Navigator.pop(ctx);
-              // ✅ الإصلاح رقم 2: استدعاء الشاشة باستخدام MaterialPageRoute
-              final updatedTeacher = await Navigator.of(context).push<Teacher>(
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider(
-                    create: (context) => EditTeacherBloc(repository: context.read<CenterManagerRepository>()),
-                    // ✅ الإصلاح رقم 2 (تابع): تمرير الويدجت الصحيحة
-                    child: EditTeacherScreen(teacherId: teacher.id),
-                  ),
-                ),
-              );
-              // ✅ الإصلاح رقم 3: إرسال الحدث باستخدام .add()
-              if (updatedTeacher != null && context.mounted) {
-                context.read<TeachersBloc>().add(UpdateTeacherInList(updatedTeacher));
-              }
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.delete_forever, color: Colors.red.shade700),
-            title: Text('حذف الأستاذ', style: TextStyle(color: Colors.red.shade700)),
-            onTap: () {
-              Navigator.pop(ctx);
-              showDialog(
-                context: context,
-                builder: (dialogCtx) => AlertDialog(
-                  title: const Text('تأكيد الحذف'),
-                  content: Text('هل أنت متأكد من رغبتك في حذف الأستاذ "${teacher.fullName}"؟'),
-                  actions: [
-                    TextButton(child: const Text('إلغاء'), onPressed: () => Navigator.pop(dialogCtx)),
-                    TextButton(
-                      child: const Text('حذف', style: TextStyle(color: Colors.red)),
-                      onPressed: () {
-                        context.read<TeachersBloc>().add(DeleteTeacher(teacher.id));
-                        Navigator.pop(dialogCtx);
-                      },
+                onTap: () {
+                  Navigator.pop(ctx); // أغلق القائمة السفلية
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      // نوفر الـ repository للبلوك الجديد
+                      builder:
+                          (_) => BlocProvider(
+                            create:
+                                (context) => TeacherProfileBloc(
+                                  repository:
+                                      context.read<CenterManagerRepository>(),
+                                )..add(
+                                  FetchTeacherProfile(teacher.id),
+                                ), // نرسل حدث جلب البيانات فوراً
+                            child: TeacherProfileScreen(
+                              teacherName: teacher.fullName,
+                            ),
+                          ),
                     ),
-                  ],
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_note_rounded),
+                title: const Text('تعديل البيانات'),
+                onTap: () async {
+                  Navigator.pop(ctx); // أغلق القائمة السفلية
+
+                  // ✅ الإصلاح: توقع عودة "bool?" بدلاً من "Teacher"
+                  final bool? wasUpdated = await Navigator.of(
+                    context,
+                  ).push<bool>(
+                    MaterialPageRoute(
+                      builder:
+                          (_) => BlocProvider(
+                            create:
+                                (context) => EditTeacherBloc(
+                                  repository:
+                                      context.read<CenterManagerRepository>(),
+                                ),
+                            child: EditTeacherScreen(teacherId: teacher.id),
+                          ),
+                    ),
+                  );
+
+                  // ✅ الإصلاح: تحقق مما إذا كانت القيمة العائدة هي "true"
+                  // استخدم context.mounted للتأكد من أن الويدجت ما زال موجوداً
+                  if (wasUpdated == true && context.mounted) {
+                    // إذا تم التحديث بنجاح، أعد تحميل القائمة بأكملها
+                    // هذا هو النهج الأبسط والأكثر أماناً لضمان تحديث البيانات
+                    context.read<TeachersBloc>().add(const FetchTeachers());
+                  }
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.delete_forever, color: Colors.red.shade700),
+                title: Text(
+                  'حذف الأستاذ',
+                  style: TextStyle(color: Colors.red.shade700),
                 ),
-              );
-            },
+                onTap: () {
+                  Navigator.pop(ctx);
+                  showDialog(
+                    context: context,
+                    builder:
+                        (dialogCtx) => AlertDialog(
+                          title: const Text('تأكيد الحذف'),
+                          content: Text(
+                            'هل أنت متأكد من رغبتك في حذف الأستاذ "${teacher.fullName}"؟',
+                          ),
+                          actions: [
+                            TextButton(
+                              child: const Text('إلغاء'),
+                              onPressed: () => Navigator.pop(dialogCtx),
+                            ),
+                            TextButton(
+                              child: const Text(
+                                'حذف',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              onPressed: () {
+                                context.read<TeachersBloc>().add(
+                                  DeleteTeacher(teacher.id),
+                                );
+                                Navigator.pop(dialogCtx);
+                              },
+                            ),
+                          ],
+                        ),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -139,9 +173,21 @@ class _TeachersTabState extends State<TeachersTab> {
       },
       child: Column(
         children: [
-          SearchAndFilterBar(
-            onSearchChanged: _onSearchChanged,
-            hintText: 'ابحث عن أستاذ بالاسم أو الرقم أو الإيميل...',
+          Card(
+            // 1. تحديد الهوامش حول الكرت
+            margin: const EdgeInsets.all(10.0),
+            // 2. تحديد شكل الكرت (زوايا دائرية)
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              // 3. يمكنك إضافة إطار للكرت نفسه إذا أردت
+              side: BorderSide(color: Colors.grey.shade300),
+            ),
+            // 4. التحكم في الظل (elevation)
+            elevation: 2.0,
+            child: SearchAndFilterBar(
+              onSearchChanged: _onSearchChanged,
+              hintText: 'ابحث عن أستاذ بالاسم أو الرقم أو الإيميل...',
+            ),
           ),
           Expanded(
             child: BlocConsumer<TeachersBloc, TeachersState>(
@@ -149,34 +195,58 @@ class _TeachersTabState extends State<TeachersTab> {
                 if (state.errorMessage != null) {
                   ScaffoldMessenger.of(context)
                     ..hideCurrentSnackBar()
-                    ..showSnackBar(SnackBar(content: Text(state.errorMessage!), backgroundColor: Colors.red));
+                    ..showSnackBar(
+                      SnackBar(
+                        content: Text(state.errorMessage!),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
                 }
                 if (state.successMessage != null) {
                   ScaffoldMessenger.of(context)
                     ..hideCurrentSnackBar()
-                    ..showSnackBar(SnackBar(content: Text(state.successMessage!), backgroundColor: Colors.green));
+                    ..showSnackBar(
+                      SnackBar(
+                        content: Text(state.successMessage!),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
                 }
               },
               builder: (context, state) {
                 switch (state.status) {
                   case TeachersStatus.failure:
-                    return Center(child: Text('فشل تحميل البيانات: ${state.errorMessage}'));
+                    return Center(
+                      child: Text('فشل تحميل البيانات: ${state.errorMessage}'),
+                    );
                   case TeachersStatus.success:
                     if (state.teachers.isEmpty) {
-                      return const Center(child: Text('لا يوجد أساتذة لعرضهم.'));
+                      return const Center(
+                        child: Text('لا يوجد أساتذة لعرضهم.'),
+                      );
                     }
                     return ListView.builder(
                       controller: _scrollController,
-                      itemCount: state.hasReachedMax ? state.teachers.length : state.teachers.length + 1,
+                      itemCount:
+                          state.hasReachedMax
+                              ? state.teachers.length
+                              : state.teachers.length + 1,
                       itemBuilder: (context, index) {
                         if (index >= state.teachers.length) {
-                          return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
                         }
                         final teacher = state.teachers[index];
                         return ListItemTile(
                           title: teacher.fullName,
-                          subtitle: 'الهاتف: ${teacher.phoneNumber ?? 'غير متوفر'} - البريد: ${teacher.email ?? 'غير متوفر'}',
-                          onMoreTap: () => _showTeacherOptions(context, teacher),
+                          subtitle:
+                              'الهاتف: ${teacher.phoneNumber ?? 'غير متوفر'} - البريد: ${teacher.email ?? 'غير متوفر'}',
+                          onMoreTap:
+                              () => _showTeacherOptions(context, teacher),
                         );
                       },
                     );

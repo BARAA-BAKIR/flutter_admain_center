@@ -62,11 +62,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('الملف الشخصي'),
+      appBar: AppBar(title: const Text('الملف الشخصي',
+       style:  TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
     ),
       body: BlocConsumer<ProfileBloc, ProfileState>(
-        // ✅✅✅ إصلاح منطق الـ Listener ✅✅✅
-        listener: (context, state) {
+         listener: (context, state) {
           // عرض رسائل الخطأ
           if (state.status == ProfileStatus.failure && state.errorMessage != null) {
             ScaffoldMessenger.of(context)

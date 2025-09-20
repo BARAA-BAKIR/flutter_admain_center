@@ -18,6 +18,7 @@ class CenterManagerModel extends Equatable {
   final String? phoneNumber;
   final String? address;
   final double? salary;
+ 
 
   const CenterManagerModel({
     required this.id,
@@ -32,6 +33,7 @@ class CenterManagerModel extends Equatable {
     required this.birthDate,
     required this.educationLevel,
     required this.startDate,
+ 
     this.documentNumber,
     this.gender,
     this.phoneNumber,
@@ -42,16 +44,16 @@ class CenterManagerModel extends Equatable {
   factory CenterManagerModel.fromJson(Map<String, dynamic> json) {
     final employee = json['employee'];
     final employeeAdmin = employee?['employeeadmin'];
-    
+
     // ✅ 3. استخراج البيانات من الـ JSON
-    final centerData = employeeAdmin?['centern'];
+    final centerData = employeeAdmin?['center'];
 
     return CenterManagerModel(
       id: json['id'],
       fullName: json['name'],
       email: json['email'],
       centerName: centerData?['name'], // اسم المركز
-      centerId: centerData?['id'],     // ✅ رقم المركز
+      centerId: centerData?['id'], // ✅ رقم المركز
       firstName: employee?['first_name'] ?? '',
       lastName: employee?['last_name'] ?? '',
       fatherName: employee?['father_name'] ?? '',
@@ -61,30 +63,35 @@ class CenterManagerModel extends Equatable {
       startDate: employee?['start_date'] ?? '',
       documentNumber: employee?['document_number'],
       gender: employee?['gender'],
+
       phoneNumber: employee?['phone_number'],
       address: employee?['address'],
-      salary: employee?['salary'] != null ? double.tryParse(employee['salary'].toString()) : null,
+      salary:
+          employee?['salary'] != null
+              ? double.tryParse(employee['salary'].toString())
+              : null,
     );
   }
 
   @override
   List<Object?> get props => [
-        id,
-        fullName,
-        email,
-        centerName,
-        centerId, // ✅ 4. إضافته إلى props
-        firstName,
-        lastName,
-        fatherName,
-        motherName,
-        birthDate,
-        educationLevel,
-        startDate,
-        documentNumber,
-        gender,
-        phoneNumber,
-        address,
-        salary,
-      ];
+    id,
+    fullName,
+    email,
+    centerName,
+    centerId, // ✅ 4. إضافته إلى props
+    firstName,
+    lastName,
+    fatherName,
+    motherName,
+    birthDate,
+    educationLevel,
+    startDate,
+    documentNumber,
+    gender,
+    phoneNumber,
+    address,
+    salary,
+ 
+  ];
 }

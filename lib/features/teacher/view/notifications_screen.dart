@@ -58,7 +58,7 @@ class NotificationsScreen extends StatelessWidget {
   }
 
   Widget _buildNotificationTile(NotificationModel notification) {
-    final notificationTime = DateTime.parse(notification.createdAt);
+    final notificationTime = notification.createdAt;
     
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

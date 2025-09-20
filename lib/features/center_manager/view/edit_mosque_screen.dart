@@ -16,7 +16,6 @@ class EditMosqueScreen extends StatelessWidget {
       create: (context) => EditMosqueBloc(
         repository: context.read<CenterManagerRepository>(),
       ),
-      // ✅✅✅ الإصلاح رقم 1: استخدام BlocListener هنا في المستوى الأعلى ✅✅✅
       child: BlocListener<EditMosqueBloc, EditMosqueState>(
         listener: (context, state) {
           // لا نضع أي شيء له علاقة بالـ UI هنا، فقط الـ SnackBar والـ Navigator
@@ -134,14 +133,17 @@ class _EditMosqueFormState extends State<_EditMosqueForm> {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
-        labelText: label,
+        label: Text(label),
         prefixIcon: Icon(icon, color: Theme.of(context).primaryColor.withOpacity(0.7)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
+          
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.shade300),
+          gapPadding: 6
         ),
         focusedBorder: OutlineInputBorder(
+            gapPadding: 6,
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
         ),

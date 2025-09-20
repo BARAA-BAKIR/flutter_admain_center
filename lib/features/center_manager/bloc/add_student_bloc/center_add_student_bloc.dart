@@ -54,9 +54,6 @@ class CenterAddStudentBloc
       halaqasResult.fold(
         (failure) {
           // ==================== DEBUGGING CODE ====================
-          print("--- BLOC CHECK: FAILED ---");
-          print("Error received in Bloc: ${failure.message}");
-          print("--- END BLOC CHECK ---");
           // ========================================================
 
           newState = newState.copyWith(
@@ -67,13 +64,8 @@ class CenterAddStudentBloc
         (halaqas) {
           // 'halaqas' يجب أن تكون List<HalaqaNameModel>
           // ==================== DEBUGGING CODE ====================
-          print("--- BLOC CHECK: SUCCESS ---");
-          print("Data type received in Bloc: ${halaqas.runtimeType}");
-          print("Halaqas count in Bloc: ${halaqas.length}");
           if (halaqas.isNotEmpty) {
-            print("First halaqa name in Bloc: ${halaqas.first}");
           }
-          print("--- END BLOC CHECK ---");
           // ========================================================
 
           newState = newState.copyWith(
@@ -92,11 +84,8 @@ class CenterAddStudentBloc
           );
         },
         (levels) {
-          print("✅ Halaqas data received from repository.");
           if (levels.isNotEmpty) {
             final firstHalaqa = levels.first as LevelModel;
-            print("First Halaqa ID: ${firstHalaqa.id}");
-            print("First Halaqa Stage Name: ${firstHalaqa.name}");
             newState = newState.copyWith(
               levels: levels as List<LevelModel>,
               isLoadingLevels: false,

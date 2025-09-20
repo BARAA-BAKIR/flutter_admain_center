@@ -156,7 +156,7 @@
 //           ],
 //         ),
 //         floatingActionButton: FloatingActionButton.extended(
-//         
+//
 //       ),
 //     );
 //   }
@@ -271,7 +271,6 @@ class _CentersTabState extends State<CentersTab> {
   }
 
   void _navigateToAddEditScreen({CenterModel? center}) async {
-    // ✅ نستخدم Navigator.of(context, rootNavigator: true) للانتقال فوق كل شيء
     final result = await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute(
         builder:
@@ -310,15 +309,30 @@ class _CentersTabState extends State<CentersTab> {
             Expanded(
               child: BlocBuilder<CentersBloc, CentersState>(
                 builder: (context, state) {
-                  // ... (باقي الكود كما هو)
+               
                   if (state.status == CentersStatus.loading &&
                       state.centers.isEmpty) {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (state.status == CentersStatus.failure &&
                       state.centers.isEmpty) {
-                    return Center(
-                      child: Text('فشل تحميل البيانات: ${state.errorMessage}'),
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Center(
+                          child: Text(
+                            'فشل تحميل البيانات: ${state.errorMessage}',
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed:
+                              () async => context.read<CentersBloc>().add(
+                                const FetchCenters(),
+                              ),
+                          icon: Icon(Icons.replay_outlined),
+                          label: Text('إعادة المحاولة'),
+                        ),
+                      ],
                     );
                   }
                   if (state.centers.isEmpty) {
@@ -345,7 +359,7 @@ class _CentersTabState extends State<CentersTab> {
                           );
                         }
                         final center = state.centers[index];
-                       return ListItemTile(
+                        return ListItemTile(
                           icon: Icon(
                             Icons.business,
                             color: AppColors.steel_blue,
@@ -366,7 +380,7 @@ class _CentersTabState extends State<CentersTab> {
         ),
         floatingActionButton: FloatingActionButton.extended(
           heroTag: 'fab_centers',
-           onPressed: () => _navigateToAddEditScreen(),
+          onPressed: () => _navigateToAddEditScreen(),
           label: const Text('إضافة مركز'),
           icon: const Icon(Icons.add_business_rounded),
         ),
@@ -388,7 +402,7 @@ class _CentersTabState extends State<CentersTab> {
                 _navigateToAddEditScreen(center: center);
               },
             ),
-            // ... (باقي الخيارات)
+         
             ListTile(
               leading: Icon(Icons.delete_forever, color: Colors.red.shade700),
               title: Text(
@@ -419,6 +433,14 @@ class _CentersTabState extends State<CentersTab> {
                               context.read<CentersBloc>().add(
                                 DeleteCenter(center.id),
                               );
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: Text('تم الحذف بنجاح'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
                               Navigator.pop(dialogCtx);
                             },
                           ),

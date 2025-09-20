@@ -1,31 +1,4 @@
 
-// import 'package:bloc/bloc.dart';
-// import 'package:flutter_admain_center/data/models/teacher/notification_model.dart';
-// import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';
-
-// part 'notification_event.dart';
-// part 'notification_state.dart';
-
-// class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
-//   final TeacherRepository _teacherRepository;
-
-//   NotificationsBloc({required TeacherRepository teacherRepository})
-//       : _teacherRepository = teacherRepository,
-//         super(const NotificationsState()) {
-//     on<FetchNotifications>(_onFetchNotifications);
-//   }
-
-//   Future<void> _onFetchNotifications(FetchNotifications event, Emitter<NotificationsState> emit) async {
-//     emit(state.copyWith(status: NotificationsStatus.loading));
-//     final result = await _teacherRepository.getNotifications(1);
-//     result.fold(
-//       (failure) => emit(state.copyWith(status: NotificationsStatus.failure, errorMessage: failure.message)),
-//       (notifications) => emit(state.copyWith(status: NotificationsStatus.success, notifications: notifications as List<NotificationModel>)),
-//     );
-//   }
-// }
-// في lib/features/teacher/bloc/notifications/notification_bloc.dart
-
 import 'package:bloc/bloc.dart';
 import 'package:flutter_admain_center/data/models/teacher/notification_model.dart';
 import 'package:flutter_admain_center/domain/repositories/teacher_repository.dart';

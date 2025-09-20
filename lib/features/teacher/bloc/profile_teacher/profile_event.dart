@@ -7,7 +7,14 @@ abstract class ProfileEvent extends Equatable {
   @override
   List<Object?> get props => [];
 }
+class VerifyPasswordForEdit extends ProfileEvent {
+  final String password;
 
+  const VerifyPasswordForEdit(this.password);
+
+  @override
+  List<Object> get props => [password];
+}
 class FetchProfileData extends ProfileEvent {}
 
 class UpdateProfile extends ProfileEvent {

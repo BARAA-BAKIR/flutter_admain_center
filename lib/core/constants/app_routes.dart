@@ -9,4 +9,6 @@ static const String url = 'http://192.168.1.8:8000/api';
   static const String settings = '/settings';
   static const String addstudent='add/student';
    static const String mainTeacher= 'main/teacher';
+   static const String resetPassword = '/reset-password';
+
 }

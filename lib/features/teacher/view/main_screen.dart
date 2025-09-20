@@ -300,7 +300,7 @@ class _MainViewState extends State<MainView> {
     SettingsScreen(),
   ];
 
-  // ❌ لا يوجد initState هنا لطلب البيانات
+
   
   void _onItemTapped(int index) {
     setState(() {

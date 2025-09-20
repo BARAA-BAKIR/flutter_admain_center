@@ -343,7 +343,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
             children: [
               CustomTextField(
                 controller: _phoneController,
-                labelText: 'رقم الهاتف (سيكون اسم المستخدم)',
+                labelText: 'رقم الهاتف',
                 icon: Icons.phone,
                 keyboardType: TextInputType.phone,
                 validator: (v) => v!.isEmpty ? 'الحقل مطلوب' : null,

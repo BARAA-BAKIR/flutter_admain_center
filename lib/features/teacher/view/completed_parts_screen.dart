@@ -31,10 +31,11 @@ class CompletedPartsScreen extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.errorMessage ?? 'حدث خطأ'), backgroundColor: Colors.red),
               );
-            }
-            if (state.status == PartsStatus.success && state.parts.isNotEmpty) {
-               // يمكنك إضافة رسالة نجاح هنا إذا أردت بعد عملية الحفظ
-            }
+            } else if (state.status == PartsStatus.success && state.successMessage != null) { 
+               ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.successMessage!), backgroundColor: Colors.green),
+              ); 
+                Navigator.pop(context);}
           },
           builder: (context, state) {
             if (state.status == PartsStatus.loading) {
@@ -83,6 +84,7 @@ class CompletedPartsScreen extends StatelessWidget {
                           ),
                           onPressed: () {
                             context.read<CompletedPartsBloc>().add(SyncCompletedParts(studentId));
+                           
                           },
                         ),
                 ),

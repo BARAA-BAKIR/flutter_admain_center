@@ -129,10 +129,11 @@ class AddEditMosqueScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => AddEditMosqueBloc(
-        repository: context.read<SuperAdminRepository>(),
-        mosqueToEdit: mosque,
-      )..add(LoadMosquePrerequisites()), // ✅ طلب البيانات فوراً
+      create:
+          (context) => AddEditMosqueBloc(
+            repository: context.read<SuperAdminRepository>(),
+            mosqueToEdit: mosque,
+          )..add(LoadMosquePrerequisites()), // ✅ طلب البيانات فوراً
       child: const AddEditMosqueView(),
     );
   }
@@ -192,9 +193,12 @@ class _AddEditMosqueViewState extends State<AddEditMosqueView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.read<AddEditMosqueBloc>().mosqueToEdit == null ?
-         'إضافة مسجد جديد' : 'تعديل المسجد',
-         style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          context.read<AddEditMosqueBloc>().mosqueToEdit == null
+              ? 'إضافة مسجد جديد'
+              : 'تعديل المسجد',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.grey.shade100,
       ),
@@ -203,11 +207,26 @@ class _AddEditMosqueViewState extends State<AddEditMosqueView> {
           if (state.status == FormStatus.success) {
             // أبلغ القائمة الرئيسية بإعادة التحميل
             context.read<MosquesBloc>().add(const FetchMosques());
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(
+                    context.read<AddEditMosqueBloc>().mosqueToEdit != null
+                        ? 'تم الحفظ بنجاح'
+                        : 'تمت الإضافة بنجاح',
+                  ),
+                  backgroundColor: Colors.green,
+                ),
+              );
             Navigator.of(context).pop();
           }
           if (state.status == FormStatus.failure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('فشل العملية: ${state.errorMessage}'), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text('فشل العملية: ${state.errorMessage}'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         },
@@ -240,27 +259,51 @@ class _AddEditMosqueViewState extends State<AddEditMosqueView> {
                   DropdownButtonFormField<int>(
                     value: _selectedCenterId,
                     hint: const Text('اختر المركز'),
-                    items: state.availableCenters.map((center) {
-                      return DropdownMenuItem<int>(
-                        value: center.id,
-                        child: Text(center.name),
-                      );
-                    }).toList(),
-                    onChanged: (value) => setState(() => _selectedCenterId = value),
-                    validator: (value) => value == null ? 'يجب اختيار مركز' : null,
-                    decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.business_rounded)),
+                    items:
+                        state.availableCenters.map((center) {
+                          return DropdownMenuItem<int>(
+                            value: center.id,
+                            child: Text(center.name),
+                          );
+                        }).toList(),
+                    onChanged:
+                        (value) => setState(() => _selectedCenterId = value),
+                    validator:
+                        (value) => value == null ? 'يجب اختيار مركز' : null,
+                    decoration: const InputDecoration(
+                      label: Text('المركز'),
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.business_rounded),
+                    ),
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton.icon(
-                    onPressed: state.status == FormStatus.submitting ? null : _submitForm,
-                    icon: state.status == FormStatus.submitting
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white))
-                        : const Icon(Icons.save_rounded),
-                    label: Text(context.read<AddEditMosqueBloc>().mosqueToEdit == null ? 'إضافة المسجد' : 'حفظ التعديلات'),
+                    onPressed:
+                        state.status == FormStatus.submitting
+                            ? null
+                            : _submitForm,
+                    icon:
+                        state.status == FormStatus.submitting
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
+                            )
+                            : const Icon(Icons.save_rounded),
+                    label: Text(
+                      context.read<AddEditMosqueBloc>().mosqueToEdit == null
+                          ? 'إضافة المسجد'
+                          : 'حفظ التعديلات',
+                    ),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       backgroundColor: AppColors.light_blue,
-                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

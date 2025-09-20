@@ -1,4 +1,3 @@
-
 // import 'dart:async';
 // import 'package:flutter/material.dart';
 // import 'package:flutter_admain_center/core/widgets/list_item_tile.dart';
@@ -230,8 +229,10 @@ class AllStudentsTabWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => AllStudentsBloc(repository: context.read<SuperAdminRepository>())
-        ..add(const FetchAllStudents()),
+      create:
+          (context) =>
+              AllStudentsBloc(repository: context.read<SuperAdminRepository>())
+                ..add(const FetchAllStudents()),
       child: const AllStudentsTab(),
     );
   }
@@ -263,7 +264,8 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.9) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.9) {
       context.read<AllStudentsBloc>().add(FetchMoreAllStudents());
     }
   }
@@ -278,10 +280,11 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
   void _navigateToAddEditScreen({StudentListItem? student}) async {
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: context.read<AllStudentsBloc>(),
-          child: AddEditStudentScreen(student: student),
-        ),
+        builder:
+            (_) => BlocProvider.value(
+              value: context.read<AllStudentsBloc>(),
+              child: AddEditStudentScreen(student: student),
+            ),
       ),
     );
     if (result == true && mounted) {
@@ -305,25 +308,39 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
             ),
             ListTile(
               leading: Icon(Icons.delete_forever, color: Colors.red.shade700),
-              title: Text('حذف الطالب', style: TextStyle(color: Colors.red.shade700)),
+              title: Text(
+                'حذف الطالب',
+                style: TextStyle(color: Colors.red.shade700),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 showDialog(
                   context: context,
-                  builder: (dialogCtx) => AlertDialog(
-                    title: const Text('تأكيد الحذف'),
-                    content: Text('هل أنت متأكد من رغبتك في حذف الطالب "${student.fullName}"؟'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('إلغاء')),
-                      TextButton(
-                        child: const Text('حذف', style: TextStyle(color: Colors.red)),
-                        onPressed: () {
-                          context.read<AllStudentsBloc>().add(DeleteStudent(student.id));
-                          Navigator.pop(dialogCtx);
-                        },
+                  builder:
+                      (dialogCtx) => AlertDialog(
+                        title: const Text('تأكيد الحذف'),
+                        content: Text(
+                          'هل أنت متأكد من رغبتك في حذف الطالب "${student.fullName}"؟',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogCtx),
+                            child: const Text('إلغاء'),
+                          ),
+                          TextButton(
+                            child: const Text(
+                              'حذف',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                            onPressed: () {
+                              context.read<AllStudentsBloc>().add(
+                                DeleteStudent(student.id),
+                              );
+                              Navigator.pop(dialogCtx);
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
                 );
               },
             ),
@@ -344,28 +361,62 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
           ),
           Expanded(
             child: BlocBuilder<AllStudentsBloc, AllStudentsState>(
-              buildWhen: (prev, current) => prev.listStatus != current.listStatus || prev.students.length != current.students.length,
+              buildWhen:
+                  (prev, current) =>
+                      prev.listStatus != current.listStatus ||
+                      prev.students.length != current.students.length,
               builder: (context, state) {
-                if (state.listStatus == ListStatus.loading && state.students.isEmpty) {
+                if (state.listStatus == ListStatus.loading &&
+                    state.students.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (state.listStatus == ListStatus.failure && state.students.isEmpty) {
-                  return Center(child: Text('فشل تحميل البيانات: ${state.errorMessage ?? ''}'));
+                if (state.listStatus == ListStatus.failure &&
+                    state.students.isEmpty) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Center(
+                        child: Text(
+                          'فشل تحميل البيانات: ${state.errorMessage ?? ''}',
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed:
+                            () async => context.read<AllStudentsBloc>().add(
+                              const FetchAllStudents(),
+                            ),
+                        icon: Icon(Icons.replay_outlined),
+                        label: Text('إعادة المحاولة'),
+                      ),
+                    ],
+                  );
                 }
                 if (state.students.isEmpty) {
                   return const Center(child: Text('لا يوجد طلاب لعرضهم.'));
                 }
                 return RefreshIndicator(
-                  onRefresh: () async => context.read<AllStudentsBloc>().add(const FetchAllStudents()),
+                  onRefresh:
+                      () async => context.read<AllStudentsBloc>().add(
+                        const FetchAllStudents(),
+                      ),
                   child: ListView.builder(
                     controller: _scrollController,
-                    itemCount: state.hasReachedMax ? state.students.length : state.students.length + 1,
+                    itemCount:
+                        state.hasReachedMax
+                            ? state.students.length
+                            : state.students.length + 1,
                     itemBuilder: (context, index) {
                       if (index >= state.students.length) {
-                        return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
                       }
                       final student = state.students[index];
-                      final subtitle = 'المركز: ${student.centerName ?? 'غير معين'} - الحلقة: ${student.halaqaName ?? 'غير معين'}';
+                      final subtitle =
+                          'المركز: ${student.centerName ?? 'غير معين'} - الحلقة: ${student.halaqaName ?? 'غير معين'}';
                       return ListItemTile(
                         title: student.fullName,
                         subtitle: subtitle,

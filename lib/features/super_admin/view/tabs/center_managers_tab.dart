@@ -24,7 +24,6 @@
 // class CenterManagersView extends StatelessWidget {
 //   const CenterManagersView({super.key});
 
-
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
@@ -116,7 +115,7 @@
 //   // ✅ التعديل الكامل على دالة عرض نافذة الإضافة والتعديل
 //   void _showAddEditDialog(BuildContext context, {CenterManagerModel? manager}) {
 //     final formKey = GlobalKey<FormState>();
-    
+
 //     // تهيئة كل الـ Controllers
 //     final firstNameController = TextEditingController(text: manager?.firstName ?? '');
 //     final lastNameController = TextEditingController(text: manager?.lastName ?? '');
@@ -129,7 +128,7 @@
 //     final docNumberController = TextEditingController(text: manager?.documentNumber ?? '');
 //     final educationController = TextEditingController(text: manager?.educationLevel ?? '');
 //     final salaryController = TextEditingController(text: manager?.salary?.toString() ?? '');
-    
+
 //     // متغيرات لحفظ قيم التاريخ والجنس
 //     DateTime? birthDate = manager != null ? DateTime.tryParse(manager.birthDate) : null;
 //     DateTime? startDate = manager != null ? DateTime.tryParse(manager.startDate) : null;
@@ -259,6 +258,8 @@
 //   }
 // }
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_admain_center/data/models/super_admin/center_manager.dart';
 import 'package:flutter_admain_center/domain/repositories/super_admin_repository.dart';
@@ -274,9 +275,10 @@ class CenterManagersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => CenterManagersBloc(
-        repository: context.read<SuperAdminRepository>(),
-      ),
+      create:
+          (context) => CenterManagersBloc(
+            repository: context.read<SuperAdminRepository>(),
+          ),
       child: const CenterManagersView(),
     );
   }
@@ -290,6 +292,22 @@ class CenterManagersView extends StatefulWidget {
 }
 
 class _CenterManagersViewState extends State<CenterManagersView> {
+  Timer? _debounce;
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      context.read<CenterManagersBloc>().add(
+        LoadCenterManagers(searchQuery: query),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return VisibilityDetector(
@@ -297,52 +315,115 @@ class _CenterManagersViewState extends State<CenterManagersView> {
       onVisibilityChanged: (visibilityInfo) {
         if (visibilityInfo.visibleFraction > 0.5) {
           final state = context.read<CenterManagersBloc>().state;
-          if (state is! CenterManagersLoaded && state is! CenterManagersLoading) {
+          if (state is! CenterManagersLoaded &&
+              state is! CenterManagersLoading) {
             context.read<CenterManagersBloc>().add(LoadCenterManagers());
           }
         }
       },
       child: Scaffold(
-        body: BlocConsumer<CenterManagersBloc, CenterManagersState>(
-          listener: (context, state) {
-            if (state is CenterManagersError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('فشل العملية: ${state.message}'), backgroundColor: Colors.red),
-              );
-            }
-          },
-          builder: (context, state) {
-            if (state is CenterManagersLoading && state is! CenterManagersLoaded) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (state is CenterManagersLoaded) {
-              if (state.managers.isEmpty) {
-                return const Center(child: Text('لا يوجد مدراء مراكز لعرضهم.'));
-              }
-              return RefreshIndicator(
-                onRefresh: () async => context.read<CenterManagersBloc>().add(LoadCenterManagers()),
-                child: ListView.builder(
-                  itemCount: state.managers.length,
-                  itemBuilder: (context, index) {
-                    final manager = state.managers[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: ListTile(
-                        leading: const CircleAvatar(child: Icon(Icons.person_pin_rounded)),
-                        title: Text(manager.fullName, style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
-                        subtitle: Text('المركز: ${manager.centerName ?? 'غير معين'}', style: GoogleFonts.tajawal()),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.more_vert),
-                          onPressed: () => _showOptions(context, manager),
-                        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                onChanged: _onSearchChanged,
+                decoration: InputDecoration(
+                  labelText: 'ابحث عن اسم مدير أو مركز...',
+                  prefixIcon: const Icon(Icons.search),
+
+                  border: OutlineInputBorder(
+                    gapPadding: 6,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: BlocConsumer<CenterManagersBloc, CenterManagersState>(
+                listener: (context, state) {
+                  if (state is CenterManagersError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('فشل العملية: ${state.message}'),
+                        backgroundColor: Colors.red,
                       ),
                     );
-                  },
-                ),
-              );
-            }
-            return const Center(child: Text('جاري التحميل...'));
-          },
+                  }
+                },
+                builder: (context, state) {
+                  if (state is CenterManagersLoading &&
+                      state is! CenterManagersLoaded) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state is CenterManagersLoaded) {
+                    if (state.managers.isEmpty) {
+                      return const Center(
+                        child: Text('لا يوجد مدراء مراكز لعرضهم.'),
+                      );
+                    }
+                    if (state.isSearching) {
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: LinearProgressIndicator(),
+                      );
+                    }
+                    return RefreshIndicator(
+                      onRefresh:
+                          () async => context.read<CenterManagersBloc>().add(
+                            LoadCenterManagers(),
+                          ),
+                      child: ListView.builder(
+                        itemCount: state.managers.length,
+                        itemBuilder: (context, index) {
+                          final manager = state.managers[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            child: ListTile(
+                              leading: const CircleAvatar(
+                                child: Icon(Icons.person_pin_rounded),
+                              ),
+                              title: Text(
+                                manager.fullName,
+                                style: GoogleFonts.tajawal(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'المركز: ${manager.centerName ?? 'غير معين'}',
+                                style: GoogleFonts.tajawal(),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.more_vert),
+                                onPressed: () => _showOptions(context, manager),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Center(child: Text('جاري التحميل...')),
+                      ElevatedButton.icon(
+                        onPressed:
+                            () async => context.read<CenterManagersBloc>().add(
+                              LoadCenterManagers(),
+                            ),
+                        icon: Icon(Icons.replay_outlined),
+                        label: Text('إعادة المحاولة'),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
         floatingActionButton: FloatingActionButton(
           heroTag: 'fab_manager',
@@ -353,13 +434,17 @@ class _CenterManagersViewState extends State<CenterManagersView> {
     );
   }
 
-  void _navigateToAddEditScreen(BuildContext context, {CenterManagerModel? manager}) {
+  void _navigateToAddEditScreen(
+    BuildContext context, {
+    CenterManagerModel? manager,
+  }) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: context.read<CenterManagersBloc>(),
-          child: AddEditManagerScreen(manager: manager),
-        ),
+        builder:
+            (_) => BlocProvider.value(
+              value: context.read<CenterManagersBloc>(),
+              child: AddEditManagerScreen(manager: manager),
+            ),
       ),
     );
   }
@@ -367,42 +452,65 @@ class _CenterManagersViewState extends State<CenterManagersView> {
   void _showOptions(BuildContext context, CenterManagerModel manager) {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => Wrap(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('تعديل'),
-            onTap: () {
-              Navigator.pop(ctx);
-              _navigateToAddEditScreen(context, manager: manager);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text('حذف', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(ctx);
-              showDialog(
-                context: context,
-                builder: (dialogCtx) => AlertDialog(
-                  title: const Text('تأكيد الحذف'),
-                  content: Text('هل أنت متأكد من حذف المدير ${manager.fullName}؟'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('إلغاء')),
-                    TextButton(
-                      onPressed: () {
-                        context.read<CenterManagersBloc>().add(DeleteCenterManager(manager.id));
-                        Navigator.pop(dialogCtx);
-                      },
-                      child: const Text('حذف', style: TextStyle(color: Colors.red)),
-                    ),
-                  ],
+      builder:
+          (ctx) => Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text(' تعديل مدير مركز'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _navigateToAddEditScreen(context, manager: manager);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text(
+                  'حذف مدير مركز',
+                  style: TextStyle(color: Colors.red),
                 ),
-              );
-            },
+                onTap: () {
+                  Navigator.pop(ctx);
+                  showDialog(
+                    context: context,
+                    builder:
+                        (dialogCtx) => AlertDialog(
+                          title: const Text('تأكيد الحذف'),
+                          content: Text(
+                            'هل أنت متأكد من حذف المدير ${manager.fullName}؟',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogCtx),
+                              child: const Text('إلغاء'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                context.read<CenterManagersBloc>().add(
+                                  DeleteCenterManager(manager.id),
+                                );
+                                ScaffoldMessenger.of(context)
+                                  ..hideCurrentSnackBar()
+                                  ..showSnackBar(
+                                    SnackBar(
+                                      content: Text('تم الحذف بنجاح'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                Navigator.pop(dialogCtx);
+                              },
+                              child: const Text(
+                                'حذف',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }

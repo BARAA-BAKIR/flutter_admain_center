@@ -2,6 +2,8 @@
 // احذف السطر التالي:
 // import 'package:flutter_admain_center/features/teacher/bloc/profile_student/profile_bloc.dart';
 
+import 'dart:developer';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_admain_center/data/models/teacher/teacher_profile_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,7 +15,7 @@ part 'profile_event.dart';
 part 'profile_state.dart';
 
 // لا داعي لتحديد أنواع enum هنا، مكانها الأفضل في ملف الحالة (state)
-// enum ProfileStatus { initial, loading, success, failure }
+ enum ProfileStatus { initial, loading, success, failure }
 // enum ProfileActionStatus { initial, loading, success, failure }
 
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
@@ -24,21 +26,51 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         super(const ProfileState()) { // الحالة الأولية تأتي من ProfileState
     on<FetchProfileData>(_onFetchProfileData);
     on<UpdateProfile>(_onUpdateProfile);
+    on<VerifyPasswordForEdit>(_onVerifyPasswordForEdit);
   }
+Future<void> _onVerifyPasswordForEdit(
+    VerifyPasswordForEdit event,
+    Emitter<ProfileState> emit,
+  ) async {
+    // 1. ضع الحالة في وضع التحميل
+    emit(state.copyWith(actionStatus: ProfileActionStatus.loading));
+    
+    // 2. استدع دالة التحقق من الـ Repository
+    // (نفترض أن لديك دالة verifyPassword في TeacherRepository)
+    final result = await _teacherRepository.verifyPassword(event.password);
 
+    result.fold(
+      (failure) {
+        // 3. في حالة الفشل، أرسل رسالة خطأ
+        emit(state.copyWith(
+          actionStatus: ProfileActionStatus.failure,
+          errorMessage: failure.message,
+        ));
+      },
+      (_) {
+        // 4. في حالة النجاح، أرسل حالة نجاح خاصة بالتحقق
+        // سنضيف حالة جديدة لهذا الغرض في ProfileState
+        emit(state.copyWith(actionStatus: ProfileActionStatus.passwordVerified));
+      },
+    );
+    // أعد الحالة إلى initial للسماح بعمليات أخرى
+    emit(state.copyWith(actionStatus: ProfileActionStatus.initial));
+  }
   Future<void> _onFetchProfileData(
     FetchProfileData event,
     Emitter<ProfileState> emit,
   ) async {
     emit(state.copyWith(status: ProfileStatus.loading));
     try {
+       log('Failed to parse TeacherProfile: bloc');
+       
       final result = await _teacherRepository.getTeacherProfile();
       result.fold(
         (failure) => emit(state.copyWith(status: ProfileStatus.failure, errorMessage: failure.message)),
         (profileData) => emit(state.copyWith(status: ProfileStatus.success, profile: profileData)),
       );
     } catch (e) {
-      emit(state.copyWith(status: ProfileStatus.failure, errorMessage: 'An unexpected error occurred: ${e.toString()}'));
+      emit(state.copyWith(status: ProfileStatus.failure, errorMessage: 'خطأ: ${e.toString()}'));
     }
   }
 

@@ -1,5 +1,7 @@
 // lib/features/teacher/blocs/dashboard/dashboard_bloc.dart
+// ignore: depend_on_referenced_packages
 import 'package:bloc/bloc.dart';
+// ignore: depend_on_referenced_packages
 import 'package:meta/meta.dart';
  // Import failures
 import 'package:flutter_admain_center/data/models/teacher/dashboard_model.dart';

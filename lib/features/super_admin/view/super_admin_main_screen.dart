@@ -269,13 +269,6 @@ class _SuperAdminMainScreenState extends State<SuperAdminMainScreen> {
   bool _showSettings = false;
 
   // ✅ 1. قائمة المفاتيح، مفتاح لكل تاب للحفاظ على حالة التنقل
-  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -464,15 +457,15 @@ class _SuperAdminMainScreenState extends State<SuperAdminMainScreen> {
   // }
 
   // ✅ 3. دالة لبناء Navigator لكل تاب
-  Widget _buildOffstageNavigator(int index, Widget initialRoute) {
-    return Offstage(
-      offstage: _selectedIndex != index,
-      child: Navigator(
-        key: _navigatorKeys[index],
-        onGenerateRoute: (routeSettings) {
-          return MaterialPageRoute(builder: (context) => initialRoute);
-        },
-      ),
-    );
-  }
+  // Widget _buildOffstageNavigator(int index, Widget initialRoute) {
+  //   return Offstage(
+  //     offstage: _selectedIndex != index,
+  //     child: Navigator(
+  //       key: _navigatorKeys[index],
+  //       onGenerateRoute: (routeSettings) {
+  //         return MaterialPageRoute(builder: (context) => initialRoute);
+  //       },
+  //     ),
+  //   );
+  // }
 }

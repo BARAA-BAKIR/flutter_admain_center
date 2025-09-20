@@ -16,14 +16,30 @@ class CenterManagersBloc extends Bloc<CenterManagersEvent, CenterManagersState> 
     on<DeleteCenterManager>(_onDelete);
   }
 
-  Future<void> _onLoad(LoadCenterManagers event, Emitter<CenterManagersState> emit) async {
+  // في ملف center_managers_bloc.dart
+
+Future<void> _onLoad(LoadCenterManagers event, Emitter<CenterManagersState> emit) async {
+  // في حالة البحث، لا نريد أن نعرض شاشة تحميل كاملة،
+  // بل نبقي على البيانات القديمة ونعرض مؤشر تحميل صغير.
+  // لذلك، سنتحقق من الحالة الحالية.
+  final currentState = state;
+  if (currentState is CenterManagersLoaded) {
+    // إذا كنا نبحث، نصدر حالة جديدة مع isSearching = true
+    emit(currentState.copyWith(isSearching: true));
+  } else {
+    // إذا كانت هذه هي المرة الأولى للتحميل، نعرض شاشة تحميل كاملة
     emit(CenterManagersLoading());
-    final result = await repository.getCenterManagers();
-    result.fold(
-      (failure) => emit(CenterManagersError(failure.message)),
-      (managers) => emit(CenterManagersLoaded(managers)),
-    );
   }
+
+  // ✅ الإصلاح: قم بتمرير قيمة البحث من الحدث إلى الريبو
+  final result = await repository.getCenterManagers(searchQuery: event.searchQuery);
+
+  result.fold(
+    (failure) => emit(CenterManagersError(failure.message)),
+    (managers) => emit(CenterManagersLoaded(managers)),
+  );
+}
+
 
   Future<void> _onAdd(AddCenterManager event, Emitter<CenterManagersState> emit) async {
     final result = await repository.addCenterManager(event.data);

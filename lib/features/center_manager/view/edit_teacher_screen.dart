@@ -66,32 +66,46 @@ class _EditTeacherScreenState extends State<EditTeacherScreen> {
         'mother_name': _motherNameController.text,
         'phone_number': _phoneController.text,
         'email': _emailController.text,
-        if (_passwordController.text.isNotEmpty) 'password': _passwordController.text,
-        if (_passwordController.text.isNotEmpty) 'password_confirmation': _passwordConfirmController.text,
+        if (_passwordController.text.isNotEmpty)
+          'password': _passwordController.text,
+        if (_passwordController.text.isNotEmpty)
+          'password_confirmation': _passwordConfirmController.text,
       };
-      context.read<EditTeacherBloc>().add(SubmitTeacherUpdate(teacherId: widget.teacherId, data: data));
+      context.read<EditTeacherBloc>().add(
+        SubmitTeacherUpdate(teacherId: widget.teacherId, data: data),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('تعديل بيانات الأستاذ',
-          style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: AppColors.steel_blue,
-          foregroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          'تعديل بيانات الأستاذ',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        backgroundColor: AppColors.steel_blue,
+        foregroundColor: Colors.white,
+      ),
       body: BlocConsumer<EditTeacherBloc, EditTeacherState>(
         listener: (context, state) {
-          if (state.status == EditTeacherStatus.success && _isInitialDataLoaded) {
+          if (state.status == EditTeacherStatus.success &&
+              _isInitialDataLoaded) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('تم التحديث بنجاح'), backgroundColor: Colors.green),
+              const SnackBar(
+                content: Text('تم التحديث بنجاح'),
+                backgroundColor: Colors.green,
+              ),
             );
-            Navigator.of(context).pop(state.initialData); 
+            Navigator.of(context).pop(true);
           }
           if (state.status == EditTeacherStatus.failure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('فشل: ${state.errorMessage ?? "خطأ غير معروف"}'), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text('فشل: ${state.errorMessage ?? "خطأ غير معروف"}'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         },
@@ -100,7 +114,9 @@ class _EditTeacherScreenState extends State<EditTeacherScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (state.status == EditTeacherStatus.success && !_isInitialDataLoaded && state.initialData != null) {
+          if (state.status == EditTeacherStatus.success &&
+              !_isInitialDataLoaded &&
+              state.initialData != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 _populateFields(state.initialData!);
@@ -118,10 +134,30 @@ class _EditTeacherScreenState extends State<EditTeacherScreen> {
                   child: Column(
                     children: [
                       // ✅ الإصلاح رقم 1: إضافة argument الـ icon المفقود
-                      CustomTextField(controller: _firstNameController, labelText: 'الاسم الأول', icon: Icons.person, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
-                      CustomTextField(controller: _lastNameController, labelText: 'الكنية', icon: Icons.person_outline, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
-                      CustomTextField(controller: _fatherNameController, labelText: 'اسم الأب', icon: Icons.person_outline, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
-                      CustomTextField(controller: _motherNameController, labelText: 'اسم الأم', icon: Icons.person_outline, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
+                      CustomTextField(
+                        controller: _firstNameController,
+                        labelText: 'الاسم الأول',
+                        icon: Icons.person,
+                        validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                      ),
+                      CustomTextField(
+                        controller: _lastNameController,
+                        labelText: 'الكنية',
+                        icon: Icons.person_outline,
+                        validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                      ),
+                      CustomTextField(
+                        controller: _fatherNameController,
+                        labelText: 'اسم الأب',
+                        icon: Icons.person_outline,
+                        validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                      ),
+                      CustomTextField(
+                        controller: _motherNameController,
+                        labelText: 'اسم الأم',
+                        icon: Icons.person_outline,
+                        validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                      ),
                     ],
                   ),
                 ),
@@ -130,28 +166,73 @@ class _EditTeacherScreenState extends State<EditTeacherScreen> {
                   title: 'معلومات التواصل والحساب',
                   child: Column(
                     children: [
-                      CustomTextField(controller: _phoneController, labelText: 'رقم الهاتف', icon: Icons.phone, keyboardType: TextInputType.phone, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
-                      CustomTextField(controller: _emailController, labelText: 'البريد الإلكتروني', icon: Icons.email, keyboardType: TextInputType.emailAddress, validator: (v) => (v == null || !v.contains('@')) ? 'بريد إلكتروني غير صالح' : null),
+                      CustomTextField(
+                        controller: _phoneController,
+                        labelText: 'رقم الهاتف',
+                        icon: Icons.phone,
+                        keyboardType: TextInputType.phone,
+                        validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+                      ),
+                      CustomTextField(
+                        controller: _emailController,
+                        labelText: 'البريد الإلكتروني',
+                        icon: Icons.email,
+                        keyboardType: TextInputType.emailAddress,
+                        validator:
+                            (v) =>
+                                (v == null || !v.contains('@'))
+                                    ? 'بريد إلكتروني غير صالح'
+                                    : null,
+                      ),
                       const Divider(height: 32),
-                      Text('تغيير كلمة المرور (اتركه فارغاً لعدم التغيير)', style: GoogleFonts.tajawal()),
+                      Text(
+                        'تغيير كلمة المرور (اتركه فارغاً لعدم التغيير)',
+                        style: GoogleFonts.tajawal(),
+                      ),
                       const SizedBox(height: 16),
-                      CustomTextField(controller: _passwordController, labelText: 'كلمة المرور الجديدة', icon: Icons.lock_outline, isPassword: true, validator: (v) {
-                        if (v!.isNotEmpty && v.length < 8) return 'يجب أن تكون 8 أحرف على الأقل';
-                        return null;
-                      }),
-                      CustomTextField(controller: _passwordConfirmController, labelText: 'تأكيد كلمة المرور', icon: Icons.lock_person, isPassword: true, validator: (v) {
-                        if (_passwordController.text.isNotEmpty && v != _passwordController.text) return 'كلمتا المرور غير متطابقتين';
-                        return null;
-                      }),
+                      CustomTextField(
+                        controller: _passwordController,
+                        labelText: 'كلمة المرور الجديدة',
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                        validator: (v) {
+                          if (v!.isNotEmpty && v.length < 8)
+                            return 'يجب أن تكون 8 أحرف على الأقل';
+                          return null;
+                        },
+                      ),
+                      CustomTextField(
+                        controller: _passwordConfirmController,
+                        labelText: 'تأكيد كلمة المرور',
+                        icon: Icons.lock_person,
+                        isPassword: true,
+                        validator: (v) {
+                          if (_passwordController.text.isNotEmpty &&
+                              v != _passwordController.text)
+                            return 'كلمتا المرور غير متطابقتين';
+                          return null;
+                        },
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton.icon(
-                  onPressed: state.status == EditTeacherStatus.submitting ? null : _submitForm,
-                  icon: state.status == EditTeacherStatus.submitting ? const SizedBox.shrink() : const Icon(Icons.save),
-                  label: state.status == EditTeacherStatus.submitting ? const CircularProgressIndicator(color: Colors.white) : const Text('حفظ التعديلات'),
-                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                  onPressed:
+                      state.status == EditTeacherStatus.submitting
+                          ? null
+                          : _submitForm,
+                  icon:
+                      state.status == EditTeacherStatus.submitting
+                          ? const SizedBox.shrink()
+                          : const Icon(Icons.save),
+                  label:
+                      state.status == EditTeacherStatus.submitting
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('حفظ التعديلات'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
                 ),
               ],
             ),
@@ -171,7 +252,14 @@ class _EditTeacherScreenState extends State<EditTeacherScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.night_blue)),
+            Text(
+              title,
+              style: GoogleFonts.tajawal(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.night_blue,
+              ),
+            ),
             const Divider(height: 24, thickness: 0.5),
             child,
           ],

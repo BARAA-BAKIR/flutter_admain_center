@@ -130,9 +130,8 @@ class SuperAdminDashboardView extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'اللوحة الرئيسية',
-          
-          style: GoogleFonts.tajawal(fontWeight: FontWeight.bold,
-          ),
+
+          style: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.grey.shade100,
         elevation: 0,
@@ -145,10 +144,23 @@ class SuperAdminDashboardView extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.status == DashboardStatus.failure) {
-            return Center(
-              child: Text(
-                'فشل تحميل البيانات: ${state.errorMessage ?? "خطأ غير معروف"}',
-              ),
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Center(
+                  child: Text(
+                    'فشل تحميل البيانات: ${state.errorMessage ?? "خطأ غير معروف"}',
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed:
+                      () async => context.read<DashboardBloc>().add(
+                        FetchSuperAdminDashboard(),
+                      ),
+                  icon: Icon(Icons.replay_outlined),
+                  label: Text('إعادة المحاولة'),
+                ),
+              ],
             );
           }
           return RefreshIndicator(
@@ -174,7 +186,6 @@ class SuperAdminDashboardView extends StatelessWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
-                   
                     InfoCard(
                       title: 'إجمالي المراكز',
                       value: state.globalStats['centers']?.toString() ?? '0',

@@ -127,12 +127,15 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                     obscureText: !_isPasswordVisible,
                     decoration: InputDecoration(
                       labelText: 'كلمة المرور الجديدة',
+
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility),
                         onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                       ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        gapPadding: 6),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'هذا الحقل مطلوب';
@@ -148,7 +151,9 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                     decoration: InputDecoration(
                       labelText: 'تأكيد كلمة المرور',
                       prefixIcon: const Icon(Icons.lock_outline),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        gapPadding: 6
+                        ,borderRadius: BorderRadius.circular(12)),
                     ),
                     validator: (value) {
                       if (value != _passwordController.text) return 'كلمتا المرور غير متطابقتين';

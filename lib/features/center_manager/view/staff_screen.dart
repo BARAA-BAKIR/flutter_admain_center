@@ -80,6 +80,7 @@ class _StaffScreenState extends State<StaffScreen> with SingleTickerProviderStat
       case 0: // تاب الحلقات
         return FloatingActionButton.extended(
           onPressed: () => _navigateToAddHalaqa(context),
+             heroTag: 'add_halaqa_fab',
           label: const Text('إضافة حلقة'),
           icon: const Icon(Icons.add_circle_outline),
           backgroundColor: AppColors.teal_blue,
@@ -88,6 +89,7 @@ class _StaffScreenState extends State<StaffScreen> with SingleTickerProviderStat
       case 1: // تاب الأساتذة
         return FloatingActionButton.extended(
           onPressed: () => _navigateToAddTeacher(context),
+             heroTag: 'add_teacher_fab',
           label: const Text('إضافة أستاذ'),
           icon: const Icon(Icons.person_add_alt_1),
           backgroundColor: AppColors.teal_blue,
@@ -107,8 +109,9 @@ class _StaffScreenState extends State<StaffScreen> with SingleTickerProviderStat
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: Text('الكادر التعليمي', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        title: Text('الهيكلية الكاملة', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.grey.shade100,
+        centerTitle: true,
         elevation: 0,
         bottom: TabBar(
           controller: _tabController, //  ربط الـ TabBar بالـ Controller

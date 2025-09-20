@@ -84,7 +84,13 @@ abstract class CenterManagersEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class LoadCenterManagers extends CenterManagersEvent {}
+class LoadCenterManagers extends CenterManagersEvent {
+   final String? searchQuery;
+
+  const LoadCenterManagers({this.searchQuery});
+
+  
+}
 
 class AddCenterManager extends CenterManagersEvent {
   final Map<String, dynamic> data;

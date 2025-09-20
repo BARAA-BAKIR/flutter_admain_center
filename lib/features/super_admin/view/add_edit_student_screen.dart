@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-
 class AddEditStudentScreen extends StatefulWidget {
   final StudentListItem? student;
   const AddEditStudentScreen({super.key, this.student});
@@ -19,20 +18,32 @@ class AddEditStudentScreen extends StatefulWidget {
 class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
   final _formKey = GlobalKey<FormState>();
   final _controllers = <String, TextEditingController>{};
-
+  String? _gender;
   @override
   void initState() {
     super.initState();
     _initializeControllers();
     // عند بدء الشاشة، نطلب من الـ BLoC تحميل كل البيانات اللازمة
-    context.read<AllStudentsBloc>().add(LoadDataForStudentForm(studentId: widget.student?.id));
+    context.read<AllStudentsBloc>().add(
+      LoadDataForStudentForm(studentId: widget.student?.id),
+    );
   }
 
   void _initializeControllers() {
     const fields = [
-      'name', 'email', 'password', 'first_name', 'last_name', 'father_name',
-      'mother_name', 'contact_number', 'education_level', 'health_status',
-      'social_status', 'male_siblings_count', 'female_siblings_count'
+      'name',
+      'email',
+      'password',
+      'first_name',
+      'last_name',
+      'father_name',
+      'mother_name',
+      'contact_number',
+      'education_level',
+      'health_status',
+      'social_status',
+      'male_siblings_count',
+      'female_siblings_count',
     ];
     for (var field in fields) {
       _controllers[field] = TextEditingController();
@@ -57,8 +68,10 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
     _controllers['education_level']!.text = details.educationLevel ?? '';
     _controllers['health_status']!.text = details.healthStatus ?? '';
     _controllers['social_status']!.text = details.socialStatus ?? '';
-    _controllers['male_siblings_count']!.text = (details.maleSiblingsCount ?? 0).toString();
-    _controllers['female_siblings_count']!.text = (details.femaleSiblingsCount ?? 0).toString();
+    _controllers['male_siblings_count']!.text =
+        (details.maleSiblingsCount ?? 0).toString();
+    _controllers['female_siblings_count']!.text =
+        (details.femaleSiblingsCount ?? 0).toString();
   }
 
   void _submitForm(AllStudentsState currentState) {
@@ -80,7 +93,10 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
       'female_siblings_count': _controllers['female_siblings_count']!.text,
       'gender': currentState.selectedGender,
       'is_one_parent_deceased': currentState.isOneParentDeceased,
-      'birth_date': currentState.selectedBirthDate != null ? DateFormat('yyyy-MM-dd').format(currentState.selectedBirthDate!) : null,
+      'birth_date':
+          currentState.selectedBirthDate != null
+              ? DateFormat('yyyy-MM-dd').format(currentState.selectedBirthDate!)
+              : null,
       'halaqa_id': currentState.selectedHalaqaId,
       'level_id': currentState.selectedLevelId,
     };
@@ -90,7 +106,9 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
     }
 
     if (widget.isEditMode) {
-      context.read<AllStudentsBloc>().add(UpdateStudentDetails(studentId: widget.student!.id, data: data));
+      context.read<AllStudentsBloc>().add(
+        UpdateStudentDetails(studentId: widget.student!.id, data: data),
+      );
     } else {
       context.read<AllStudentsBloc>().add(AddNewStudent(data: data));
     }
@@ -100,24 +118,34 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditMode ? 
-        'تعديل بيانات الطالب' : 'إضافة طالب جديد',
-        style: TextStyle(fontWeight: FontWeight.bold),),
+        title: Text(
+          widget.isEditMode ? 'تعديل بيانات الطالب' : 'إضافة طالب جديد',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: BlocConsumer<AllStudentsBloc, AllStudentsState>(
-        listenWhen: (prev, curr) =>
-            prev.formStatus != curr.formStatus ||
-            (widget.isEditMode && prev.studentDetails == null && curr.studentDetails != null),
+        listenWhen:
+            (prev, curr) =>
+                prev.formStatus != curr.formStatus ||
+                (widget.isEditMode &&
+                    prev.studentDetails == null &&
+                    curr.studentDetails != null),
         listener: (context, state) {
           if (state.formStatus == FormStatus.success) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('تمت العملية بنجاح'), backgroundColor: Colors.green),
+              const SnackBar(
+                content: Text('تمت العملية بنجاح'),
+                backgroundColor: Colors.green,
+              ),
             );
             Navigator.of(context).pop(true);
           } else if (state.formStatus == FormStatus.failure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage ?? 'حدث خطأ غير متوقع'), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text(state.errorMessage ?? 'حدث خطأ غير متوقع'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
 
@@ -126,7 +154,8 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
           }
         },
         builder: (context, state) {
-          if (state.formStatus == FormStatus.loading || state.formStatus == FormStatus.initial) {
+          if (state.formStatus == FormStatus.loading ||
+              state.formStatus == FormStatus.initial) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -142,8 +171,19 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                     icon: Icons.account_circle_outlined,
                     children: [
                       _buildTextField('name', 'اسم المستخدم'),
-                      _buildTextField('email', 'البريد الإلكتروني', keyboardType: TextInputType.emailAddress, validator: _validateEmail),
-                      _buildTextField('password', 'كلمة المرور', isPassword: true, isRequired: !widget.isEditMode, validator: _validatePasswordForAdd),
+                      _buildTextField(
+                        'email',
+                        'البريد الإلكتروني',
+                        keyboardType: TextInputType.emailAddress,
+                        validator: _validateEmail,
+                      ),
+                      _buildTextField(
+                        'password',
+                        'كلمة المرور',
+                        isPassword: true,
+                        isRequired: !widget.isEditMode,
+                        validator: _validatePasswordForAdd,
+                      ),
                     ],
                   ),
                   _buildSectionCard(
@@ -168,42 +208,87 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                       const SizedBox(height: 16),
                       _buildLevelsDropdown(state),
                       const SizedBox(height: 16),
-                      _buildTextField('education_level', 'المستوى التعليمي', isRequired: false),
+                      _buildTextField(
+                        'education_level',
+                        'المستوى التعليمي',
+                        isRequired: false,
+                      ),
                     ],
                   ),
                   _buildSectionCard(
                     title: 'معلومات إضافية',
                     icon: Icons.info_outline,
                     children: [
-                      _buildTextField('contact_number', 'رقم التواصل', keyboardType: TextInputType.phone),
-                      _buildTextField('health_status', 'الحالة الصحية', isRequired: false),
-                      _buildTextField('social_status', 'الحالة الاجتماعية', isRequired: false),
+                      _buildTextField(
+                        'contact_number',
+                        'رقم التواصل',
+                        keyboardType: TextInputType.phone,
+                      ),
+                      _buildTextField(
+                        'health_status',
+                        'الحالة الصحية',
+                        isRequired: false,
+                      ),
+                    
                       Row(
                         children: [
-                          Expanded(child: _buildTextField('male_siblings_count', 'الإخوة الذكور', keyboardType: TextInputType.number)),
+                          Expanded(
+                            child: _buildTextField(
+                              'male_siblings_count',
+                              'الإخوة الذكور',
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
                           const SizedBox(width: 16),
-                          Expanded(child: _buildTextField('female_siblings_count', 'الإخوة الإناث', keyboardType: TextInputType.number)),
+                          Expanded(
+                            child: _buildTextField(
+                              'female_siblings_count',
+                              'الإخوة الإناث',
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
                         ],
                       ),
                       SwitchListTile(
                         title: const Text('أحد الوالدين متوفى؟'),
                         value: state.isOneParentDeceased,
-                        onChanged: (value) => context.read<AllStudentsBloc>().add(FormValueChanged(isOneParentDeceased: value)),
+                        onChanged:
+                            (value) => context.read<AllStudentsBloc>().add(
+                              FormValueChanged(isOneParentDeceased: value),
+                            ),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ],
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton.icon(
-                    onPressed: state.formStatus == FormStatus.submitting ? null : () => _submitForm(state),
-                    icon: state.formStatus == FormStatus.submitting ? const SizedBox.shrink() : const Icon(Icons.save_alt_rounded),
-                    label: state.formStatus == FormStatus.submitting
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Text(widget.isEditMode ? 'حفظ التعديلات' : 'إضافة الطالب'),
+                    onPressed:
+                        state.formStatus == FormStatus.submitting
+                            ? null
+                            : () => _submitForm(state),
+                    icon:
+                        state.formStatus == FormStatus.submitting
+                            ? const SizedBox.shrink()
+                            : const Icon(Icons.save_alt_rounded),
+                    label:
+                        state.formStatus == FormStatus.submitting
+                            ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                            : Text(
+                              widget.isEditMode
+                                  ? 'حفظ التعديلات'
+                                  : 'إضافة الطالب',
+                            ),
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 50),
-                      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      textStyle: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ],
@@ -217,7 +302,11 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
 
   // --- ويدجتات البناء المحسّنة ---
 
-  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
     final theme = Theme.of(context);
     return Card(
       elevation: 2,
@@ -232,7 +321,14 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
               children: [
                 Icon(icon, color: theme.primaryColor),
                 const SizedBox(width: 8),
-                Text(title, style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: theme.primaryColor)),
+                Text(
+                  title,
+                  style: GoogleFonts.tajawal(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.primaryColor,
+                  ),
+                ),
               ],
             ),
             const Divider(height: 24),
@@ -246,18 +342,24 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-floatingLabelBehavior: FloatingLabelBehavior.auto,
-      border: OutlineInputBorder( borderRadius: BorderRadius.circular(12.0),),
+      floatingLabelBehavior: FloatingLabelBehavior.auto,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
       filled: true,
       fillColor: Colors.grey.shade50,
     );
   }
 
-  Widget _buildTextField(String key, String label, {bool isPassword = false, bool isRequired = true, TextInputType keyboardType = TextInputType.text, String? Function(String?)? validator}) {
+  Widget _buildTextField(
+    String key,
+    String label, {
+    bool isPassword = false,
+    bool isRequired = true,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
-        
         controller: _controllers[key],
         decoration: _inputDecoration(label),
         obscureText: isPassword,
@@ -271,9 +373,15 @@ floatingLabelBehavior: FloatingLabelBehavior.auto,
     return DropdownButtonFormField<int?>(
       value: state.selectedCenterId,
       hint: const Text('اختر المركز'),
-      items: (state.filterCenters)
-          .map((center) => DropdownMenuItem<int?>(value: center.id, child: Text(center.name)))
-          .toList(),
+      items:
+          (state.filterCenters)
+              .map(
+                (center) => DropdownMenuItem<int?>(
+                  value: center.id,
+                  child: Text(center.name),
+                ),
+              )
+              .toList(),
       onChanged: (value) {
         context.read<AllStudentsBloc>().add(CenterSelected(value));
       },
@@ -285,15 +393,32 @@ floatingLabelBehavior: FloatingLabelBehavior.auto,
   Widget _buildHalaqasDropdown(AllStudentsState state) {
     return DropdownButtonFormField<int?>(
       value: state.selectedHalaqaId,
-      hint: Text(state.selectedCenterId == null ? 'اختر مركزاً أولاً' : 'اختر الحلقة'),
-      items: (state.filterHalaqas)
-          .map((halaqa) => DropdownMenuItem<int?>(value: halaqa['id'] as int, child: Text(halaqa['name'].toString())))
-          .toList(),
-      onChanged: state.selectedCenterId == null ? null : (value) {
-        context.read<AllStudentsBloc>().add(FormValueChanged(halaqaId: value));
-      },
+      hint: Text(
+        state.selectedCenterId == null ? 'اختر مركزاً أولاً' : 'اختر الحلقة',
+      ),
+      items:
+          (state.filterHalaqas)
+              .map(
+                (halaqa) => DropdownMenuItem<int?>(
+                  value: halaqa['id'] as int,
+                  child: Text(halaqa['name'].toString()),
+                ),
+              )
+              .toList(),
+      onChanged:
+          state.selectedCenterId == null
+              ? null
+              : (value) {
+                context.read<AllStudentsBloc>().add(
+                  FormValueChanged(halaqaId: value),
+                );
+              },
       decoration: _inputDecoration('الحلقة'),
-      validator: (value) => state.selectedCenterId != null && value == null ? 'الرجاء اختيار حلقة' : null,
+      validator:
+          (value) =>
+              state.selectedCenterId != null && value == null
+                  ? 'الرجاء اختيار حلقة'
+                  : null,
     );
   }
 
@@ -301,9 +426,15 @@ floatingLabelBehavior: FloatingLabelBehavior.auto,
     return DropdownButtonFormField<int?>(
       value: state.selectedLevelId,
       hint: const Text('اختر المستوى'),
-      items: (state.progressStages)
-          .map((level) => DropdownMenuItem<int?>(value: level['id'] as int, child: Text(level['stage_name'].toString())))
-          .toList(),
+      items:
+          (state.progressStages)
+              .map(
+                (level) => DropdownMenuItem<int?>(
+                  value: level['id'] as int,
+                  child: Text(level['stage_name'].toString()),
+                ),
+              )
+              .toList(),
       onChanged: (value) {
         context.read<AllStudentsBloc>().add(FormValueChanged(levelId: value));
       },
@@ -324,13 +455,17 @@ floatingLabelBehavior: FloatingLabelBehavior.auto,
             lastDate: DateTime.now(),
           );
           if (pickedDate != null) {
-            context.read<AllStudentsBloc>().add(FormValueChanged(birthDate: pickedDate));
+            context.read<AllStudentsBloc>().add(
+              FormValueChanged(birthDate: pickedDate),
+            );
           }
         },
         child: InputDecorator(
           decoration: _inputDecoration('تاريخ الميلاد'),
           child: Text(
-            state.selectedBirthDate != null ? DateFormat('yyyy-MM-dd').format(state.selectedBirthDate!) : 'لم يتم التحديد',
+            state.selectedBirthDate != null
+                ? DateFormat('yyyy-MM-dd').format(state.selectedBirthDate!)
+                : 'لم يتم التحديد',
             style: const TextStyle(fontSize: 16),
           ),
         ),
@@ -343,10 +478,20 @@ floatingLabelBehavior: FloatingLabelBehavior.auto,
       padding: const EdgeInsets.only(bottom: 16.0),
       child: DropdownButtonFormField<String>(
         value: state.selectedGender,
-        items: ['ذكر', 'انثى'].map((gender) => DropdownMenuItem<String>(value: gender, child: Text(gender))).toList(),
+        items:
+            ['ذكر', 'انثى']
+                .map(
+                  (gender) => DropdownMenuItem<String>(
+                    value: gender,
+                    child: Text(gender),
+                  ),
+                )
+                .toList(),
         onChanged: (value) {
           if (value != null) {
-            context.read<AllStudentsBloc>().add(FormValueChanged(gender: value));
+            context.read<AllStudentsBloc>().add(
+              FormValueChanged(gender: value),
+            );
           }
         },
         decoration: _inputDecoration('الجنس'),
@@ -354,12 +499,16 @@ floatingLabelBehavior: FloatingLabelBehavior.auto,
     );
   }
 
-  String? _validateRequired(String? value) => (value == null || value.isEmpty) ? 'هذا الحقل مطلوب' : null;
+  String? _validateRequired(String? value) =>
+      (value == null || value.isEmpty) ? 'هذا الحقل مطلوب' : null;
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) return 'البريد الإلكتروني مطلوب';
-    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'صيغة البريد الإلكتروني غير صحيحة';
+    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+      return 'صيغة البريد الإلكتروني غير صحيحة';
+    }
     return null;
   }
+
   String? _validatePasswordForAdd(String? value) {
     if (widget.isEditMode) return null;
     if (value == null || value.isEmpty) return 'كلمة المرور مطلوبة';

@@ -56,7 +56,7 @@ class TeacherManagementState extends Equatable {
     TeacherActionStatus? actionStatus,
     String? successMessage,
     String? errorMessage,
-    bool resetActionStatus = false, // Helper to reset status
+    bool resetActionStatus = false, 
   }) {
     return TeacherManagementState(
       approvedStatus: approvedStatus ?? this.approvedStatus,
